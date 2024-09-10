@@ -191,17 +191,6 @@ def generate_result_docs(name_file_data_doc:str,name_file_template_doc:str,path_
                 if not os.path.exists(finish_path):
                     os.makedirs(finish_path)
 
-                # переименовываем колонки указанные в качестве идентифицирующих для того чтобы они отображалисьвнутри файла
-                if len(lst_number_column_name_file) == 1:
-                    # если указана только одна колонка
-                    name_column = temp_df.columns[lst_number_column_name_file[0]]
-                    print(name_column)
-                    temp_df.rename(columns={name_column: 'Код_1'}, inplace=True)
-                elif len(lst_number_column_name_file) == 2:
-                    name_main_column = temp_df.columns[lst_number_column_name_file[0]] # первая колонка
-                    name_second_column = temp_df.columns[lst_number_column_name_file[1]] # вторая колонка
-                    temp_df.rename(columns={name_main_column: 'Код_1',name_second_column: 'Код_2'}, inplace=True)
-
                 data = temp_df.to_dict('records')
 
                 combine_all_docx(data,name_file_template_doc,finish_path,mode_pdf)
@@ -211,8 +200,6 @@ def generate_result_docs(name_file_data_doc:str,name_file_template_doc:str,path_
                 if len(lst_number_column_name_file) == 1:
                     # если указана только одна колонка
                     name_column = temp_df.columns[lst_number_column_name_file[0]]
-                    temp_df.rename(columns={name_column: 'Код_1'}, inplace=True)
-
 
                     for idx, row in enumerate(data):
                         doc = DocxTemplate(name_file_template_doc)
@@ -269,16 +256,6 @@ def generate_result_docs(name_file_data_doc:str,name_file_template_doc:str,path_
                     finish_path = f'{path_to_end_folder_doc}/{clean_first_name_folder}/{clean_second_name_folder}'
                     if not os.path.exists(finish_path):
                         os.makedirs(finish_path)
-
-                    # переименовываем колонки указанные в качестве идентифицирующих для того чтобы они отображалисьвнутри файла
-                    if len(lst_number_column_name_file) == 1:
-                        # если указана только одна колонка
-                        name_column = temp_df_second_layer.columns[lst_number_column_name_file[0]]
-                        temp_df_second_layer.rename(columns={name_column: 'Код_1'}, inplace=True)
-                    elif len(lst_number_column_name_file) == 2:
-                        name_main_column = temp_df_second_layer.columns[lst_number_column_name_file[0]]  # первая колонка
-                        name_second_column = temp_df_second_layer.columns[lst_number_column_name_file[1]]  # вторая колонка
-                        temp_df_second_layer.rename(columns={name_main_column: 'Код_1', name_second_column: 'Код_2'}, inplace=True)
 
                     data = temp_df_second_layer.to_dict('records') # конвертируем в список словарей
                     # Создаем объединенный файл в формате docx и pdf
@@ -355,14 +332,6 @@ def generate_result_docs(name_file_data_doc:str,name_file_template_doc:str,path_
                         finish_path = f'{path_to_end_folder_doc}/{clean_first_name_folder}/{clean_second_name_folder}/{clean_third_name_folder}'
                         if not os.path.exists(finish_path):
                             os.makedirs(finish_path)
-                        if len(lst_number_column_name_file) == 1:
-                            # если указана только одна колонка
-                            name_column = temp_df_third_layer.columns[lst_number_column_name_file[0]]
-                            temp_df_third_layer.rename(columns={name_column: 'Код_1'}, inplace=True)
-                        elif len(lst_number_column_name_file) == 2:
-                            name_main_column = temp_df_third_layer.columns[lst_number_column_name_file[0]]  # первая колонка
-                            name_second_column = temp_df_third_layer.columns[lst_number_column_name_file[1]]  # вторая колонка
-                            temp_df_third_layer.rename(columns={name_main_column: 'Код_1', name_second_column: 'Код_2'}, inplace=True)
 
                         data = temp_df_third_layer.to_dict('records')  # конвертируем в список словарей
                         # Создаем объединенный файл в формате docx и pdf
@@ -453,14 +422,6 @@ def generate_result_docs(name_file_data_doc:str,name_file_template_doc:str,path_
                             finish_path = f'{path_to_end_folder_doc}/{clean_first_name_folder}/{clean_second_name_folder}/{clean_third_name_folder}/{clean_four_name_folder}'
                             if not os.path.exists(finish_path):
                                 os.makedirs(finish_path)
-                            if len(lst_number_column_name_file) == 1:
-                                # если указана только одна колонка
-                                name_column = temp_df_third_layer.columns[lst_number_column_name_file[0]]
-                                temp_df_four_layer.rename(columns={name_column: 'Код_1'}, inplace=True)
-                            elif len(lst_number_column_name_file) == 2:
-                                name_main_column = temp_df_four_layer.columns[lst_number_column_name_file[0]]  # первая колонка
-                                name_second_column = temp_df_four_layer.columns[lst_number_column_name_file[1]]  # вторая колонка
-                                temp_df_four_layer.rename(columns={name_main_column: 'Код_1', name_second_column: 'Код_2'}, inplace=True)
 
                             data = temp_df_four_layer.to_dict('records')  # конвертируем в список словарей
                             # Создаем объединенный файл в формате docx и pdf
@@ -546,8 +507,8 @@ if __name__ == '__main__':
     main_name_file_data_doc = 'c:/Users/1/PycharmProjects/Alora/data/Яндекс Форма СПО.xlsx'
     main_name_file_template_doc = 'c:/Users/1/PycharmProjects/Alora/data/Шаблон Благодарственное педагогам.docx'
     main_path_to_end_folder_doc = 'c:/Users/1/PycharmProjects/Alora/data/Результат'
-    main_folder_structure = '3'
-    main_name_file = '0'
+    main_folder_structure = '2,1'
+    main_name_file = '1'
     main_name_type_file = 'Благодарственное'
     main_mode_pdf = 'No'
 
