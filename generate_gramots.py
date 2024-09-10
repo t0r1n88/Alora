@@ -161,7 +161,7 @@ def generate_result_docs(name_file_data_doc:str,name_file_template_doc:str,path_
 
         # проверяем чтобы номер колонки не превышал количество колонок в датафрейме
         for number_column in lst_number_column_folder_structure:
-            if number_column > len(df):
+            if number_column > df.shape[1]:
                 raise NotNumberColumn
 
         # обрабатываем колонки с именем с названием файла
@@ -174,7 +174,7 @@ def generate_result_docs(name_file_data_doc:str,name_file_template_doc:str,path_
 
         # проверяем чтобы номер колонки не превышал количество колонок в датафрейме
         for number_column in lst_number_column_name_file:
-            if number_column > len(df):
+            if number_column > df.shape[1]:
                 raise NotNumberColumn
 
 
@@ -505,10 +505,11 @@ def generate_result_docs(name_file_data_doc:str,name_file_template_doc:str,path_
 
 if __name__ == '__main__':
     main_name_file_data_doc = 'c:/Users/1/PycharmProjects/Alora/data/Яндекс Форма СПО.xlsx'
+    main_name_file_data_doc = 'c:/Users/1/PycharmProjects/Alora/data/Форма Учителя.xlsx'
     main_name_file_template_doc = 'c:/Users/1/PycharmProjects/Alora/data/Шаблон Благодарственное педагогам.docx'
     main_path_to_end_folder_doc = 'c:/Users/1/PycharmProjects/Alora/data/Результат'
-    main_folder_structure = '2,1'
-    main_name_file = '1'
+    main_folder_structure = '7'
+    main_name_file = '3'
     main_name_type_file = 'Благодарственное'
     main_mode_pdf = 'No'
 
