@@ -506,13 +506,14 @@ def generate_result_docs(name_file_data_doc:str,name_file_template_doc:str,path_
 
 
 if __name__ == '__main__':
-    main_name_file_data_doc = 'c:/Users/1/PycharmProjects/Alora/data/Студенты.xlsx'
-    #main_name_file_data_doc = 'c:/Users/1/PycharmProjects/Alora/data/Учителя.xlsx'
-    main_name_file_template_doc = 'c:/Users/1/PycharmProjects/Alora/data/Шаблон студенты.docx'
-    #main_name_file_template_doc = 'c:/Users/1/PycharmProjects/Alora/data/Шаблон учителя.docx'
+    # main_name_file_data_doc = 'c:/Users/1/PycharmProjects/Alora/data/Студенты.xlsx'
+    # main_name_file_data_doc = 'c:/Users/1/PycharmProjects/Alora/data/Преподаватели.xlsx'
+    main_name_file_data_doc = 'c:/Users/1/PycharmProjects/Alora/data/Учителя.xlsx'
+    # main_name_file_template_doc = 'c:/Users/1/PycharmProjects/Alora/data/Шаблон студенты.docx'
+    main_name_file_template_doc = 'c:/Users/1/PycharmProjects/Alora/data/Шаблон учителя.docx'
     main_path_to_end_folder_doc = 'c:/Users/1/PycharmProjects/Alora/data/Результат'
-    main_folder_structure = '7'
-    main_name_file = '3'
+    main_folder_structure = '8'
+    main_name_file = '4'
     main_name_type_file = 'Благодарственное письмо'
     main_mode_pdf = 'Yes'
 
