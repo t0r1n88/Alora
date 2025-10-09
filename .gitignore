@@ -19,6 +19,9 @@ __pycache__/
 
 # C extensions
 *.so
+#Files
+temp.py
+perfomance.py
 
 # Distribution / packaging
 .Python

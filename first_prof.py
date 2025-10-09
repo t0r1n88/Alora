@@ -8,6 +8,8 @@ from openpyxl.utils.dataframe import dataframe_to_rows
 from openpyxl.styles import Alignment
 from openpyxl.utils import get_column_letter
 from openpyxl.styles import Font, PatternFill
+import os
+import random
 
 import time
 
@@ -249,6 +251,23 @@ def write_df_error_egisso_to_excel(dct_df: dict, write_index: bool) -> openpyxl.
     return wb
 
 
+def create_cohort(value:str):
+    """
+    Функция для создания названия группы
+    :param value: значение
+    :return:
+    """
+    if value == 'г. Северобайкальск':
+        return f'ПП25_Северобайкальск'
+    elif value == 'Баунтовский (Эвенкийский) район':
+        return f'ПП25_Баунтовский'
+    else:
+        name= value.split(' ')[0]
+        return f'ПП25_{name}'
+
+
+
+
 
 
 
@@ -315,6 +334,8 @@ def processing_data_first_prof(path_to_data:str,result_folder:str):
 
     # Ищем смешение английских и русских букв
     df = df.applymap(find_mixing_alphabets)  # ищем смешения
+
+    # Обновляем индекс
 
     # Сохраняем датафрейм с ошибками разделенными по листам в соответсвии с колонками
     dct_sheet_error_df = dict()  # создаем словарь для хранения названия и датафрейма
@@ -385,6 +406,71 @@ def processing_data_first_prof(path_to_data:str,result_folder:str):
     sum_row = sum_row.rename('Итого').to_frame().transpose()
     quota_df = pd.concat([quota_df,sum_row])
     quota_df.loc['Итого','Муниципалитет'] = 'Итого'
+
+
+    # Создание списков по муниципалитетам и списка для загрузки в мудл
+    # создаем папку
+    if not os.path.exists(f'{result_folder}/{"Списки по муниципалитетам"}'):
+        os.makedirs(f'{result_folder}/{"Списки по муниципалитетам"}')
+
+    moodle_df = df.copy() # копируем
+    lst_username = [f'fp25_student{idx}' for idx in range(1,len(moodle_df)+1)]
+    lst_password = [f'{random.randint(10000, 99999)}' for idx in range(1,len(moodle_df)+1)]
+    lst_email = [f'fp25_student{idx}@mail.ru' for idx in range(1,len(moodle_df)+1)]
+    moodle_df['Логин'] = lst_username
+    moodle_df['Пароль'] = lst_password
+    moodle_df['email'] = lst_email
+    moodle_df['cohort1'] = moodle_df['Муниципалитет'].apply(create_cohort)
+    moodle_df['ФИО'] = moodle_df['Фамилия обучающегося'] + ' ' + moodle_df['Имя обучающегося'] + ' '+ moodle_df['Отчество обучающегося(при наличии)']
+
+    # Сохраняем файл для мудл
+    out_moodle_df = moodle_df[['Логин','Пароль','Имя обучающегося','Фамилия обучающегося','email','cohort1']]
+    out_moodle_df.columns = ['username','password','firstname','lastname','email','cohort1']
+    out_moodle_df.to_excel(f'{result_folder}/Файл для MOODLE-{len(out_moodle_df)} строк.xlsx',index=False)
+
+    # Сохраняем списки по муниципалитетам
+    lst_value_column = moodle_df['Муниципалитет'].unique()
+
+    for idx, value in enumerate(lst_value_column):
+        wb = openpyxl.Workbook()  # создаем файл
+        temp_df = moodle_df[moodle_df['Муниципалитет'] == value]  # отфильтровываем по значению
+        temp_df = temp_df[['Школа','Класс','ФИО','Логин','Пароль','Номер телефона законного представителя']]
+        # short_name = value[:40]  # получаем обрезанное значение
+        # short_name = re.sub(r'[\r\b\n\t\'+()<> :"?*|\\/]', '_', short_name)
+        for row in dataframe_to_rows(temp_df, index=False, header=True):
+            wb['Sheet'].append(row)
+
+        # Устанавливаем автоширину для каждой колонки
+        for column in wb['Sheet'].columns:
+            max_length = 0
+            column_name = get_column_letter(column[0].column)
+            for cell in column:
+                try:
+                    if len(str(cell.value)) > max_length:
+                        max_length = len(cell.value)
+                except:
+                    pass
+            adjusted_width = (max_length + 2)
+            wb['Sheet'].column_dimensions[column_name].width = adjusted_width
+
+        wb.save(f'{result_folder}/Списки по муниципалитетам/{value} учеников-{len(temp_df)}.xlsx')
+        wb.close()
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
