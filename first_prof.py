@@ -281,7 +281,7 @@ def processing_data_first_prof(path_to_data:str,result_folder:str):
 
     # получаем время
     t = time.localtime()
-    current_time = time.strftime('%H_%M_%S', t)
+    current_time = time.strftime('%H_%M на %d.%m', t)
 
     begin_df = pd.read_excel(path_to_data,dtype=str)
     number_mun = list(begin_df.columns).index('Выберите свой муниципалитет (район)') # Индекс колонки с муниципалитетом
@@ -298,7 +298,7 @@ def processing_data_first_prof(path_to_data:str,result_folder:str):
     begin_df['Школа'] = lst_school
     # Начинаем собирать итоговый датафрейм
     df = begin_df[['Выберите свой муниципалитет (район)','Школа','Класс','Фамилия обучающегося','Имя обучающегося','Отчество обучающегося(при наличии)',
-                   'Дата рождения обучаещегося','Пол обучающегося','СНИЛС обучающегося','Фото СНИЛС обучающегося',
+                   'Дата рождения обучающегося','Пол обучающегося','СНИЛС обучающегося','Фото СНИЛС обучающегося',
                    'Контактный телефон обучающегося','Гражданство обучающегося','Введите гражданство','Серия паспорта обучающегося',
                    'Номер паспорта обучающегося','Кем выдан паспорт обучающегося','Дата выдачи паспорта обучающегося',
                    'ФИО законного представителя','Серия паспорта законного представителя','Номер паспорта законного представителя',
@@ -336,6 +336,7 @@ def processing_data_first_prof(path_to_data:str,result_folder:str):
     df = df.applymap(find_mixing_alphabets)  # ищем смешения
 
     # Обновляем индекс
+    df.index = list(range(len(df)))
 
     # Сохраняем датафрейм с ошибками разделенными по листам в соответсвии с колонками
     dct_sheet_error_df = dict()  # создаем словарь для хранения названия и датафрейма
@@ -357,9 +358,7 @@ def processing_data_first_prof(path_to_data:str,result_folder:str):
     file_error_wb = del_sheet(file_error_wb, ['Sheet', 'Sheet1', 'Для подсчета'])
     file_error_wb.save(f'{result_folder}/Ошибки {current_time}.xlsx')
 
-    main_file_wb = write_df_error_egisso_to_excel({'Общий свод': df}, write_index=False)
-    main_file_wb = del_sheet(main_file_wb, ['Sheet', 'Sheet1', 'Для подсчета'])
-    main_file_wb.save(f'{result_folder}/Список Первая профессия {current_time}.xlsx')
+
 
 
 
@@ -406,6 +405,9 @@ def processing_data_first_prof(path_to_data:str,result_folder:str):
     sum_row = sum_row.rename('Итого').to_frame().transpose()
     quota_df = pd.concat([quota_df,sum_row])
     quota_df.loc['Итого','Муниципалитет'] = 'Итого'
+    with pd.ExcelWriter(f'{result_folder}/Сводка Первая профессия в {current_time}.xlsx') as writer:
+        quota_df.to_excel(writer, sheet_name='Свод по квотам',index=False)
+        group_by.to_excel(writer, sheet_name='Свод по школам')
 
 
     # Создание списков по муниципалитетам и списка для загрузки в мудл
@@ -457,6 +459,34 @@ def processing_data_first_prof(path_to_data:str,result_folder:str):
         wb.close()
 
 
+    # Сохраняем в формате для линди
+    df = df.rename(columns={'Фамилия обучающегося':'Фамилия','Имя обучающегося':'Имя',
+                       'Отчество обучающегося(при наличии)':'Отчество','Дата рождения обучающегося':'Дата_рождения',
+                       'Пол обучающегося':'Пол','СНИЛС обучающегося':'СНИЛС',
+                       'Гражданство обучающегося':'Гражданство','Фото СНИЛС обучающегося':'Фото_СНИЛС',
+                       'Серия паспорта обучающегося':'Серия_паспорта','Номер паспорта обучающегося':'Номер_паспорта',
+                       'Кем выдан паспорт обучающегося':'Кем_выдан_паспорт','Дата выдачи паспорта обучающегося':'Дата_выдачи_паспорта',
+                       'ФИО законного представителя':'ФИО_представителя','Серия паспорта законного представителя':'Серия_паспорта_представителя',
+                       'Номер паспорта законного представителя':'Номер_паспорта_представителя','Кем выдан паспорт законного представителя':'Кем_выдан_паспорт_представителя',
+                       'Дата выдачи паспорта законного представителя':'Дата_выдачи_паспорта_представителя',
+                       'Номер и серия свидетельства о рождении обучающегося':'Свидетельство_рождения',
+                       'Дата выдачи свидетельства о рождении обучающегося':'Дата_выдачи_свидетельства',
+                       'Номер телефона законного представителя':'Номер_телефона',
+                       'Электронная почта законного представителя':'Электронная_почта',
+                            })
+    df['Номер_удостоверения'] = None
+    df['Рег_номер'] = None
+    df['Дата_выдачи'] = None
+    df['Номер_договор'] = None
+    df['Уровень_образования'] = None
+    df['Фамилия_в_дипломе'] = None
+    df['Серия_диплома'] = None
+    df['Номер_диплома'] = None
+
+
+    main_file_wb = write_df_error_egisso_to_excel({'Общий свод': df}, write_index=False)
+    main_file_wb = del_sheet(main_file_wb, ['Sheet', 'Sheet1', 'Для подсчета'])
+    main_file_wb.save(f'{result_folder}/Список Первая профессия {len(df)}чел. в {current_time}.xlsx')
 
 
 
@@ -475,9 +505,14 @@ def processing_data_first_prof(path_to_data:str,result_folder:str):
 
 
 
-    with pd.ExcelWriter(f'{result_folder}/Сводка Первая профессия на {current_time}.xlsx') as writer:
-        quota_df.to_excel(writer, sheet_name='Свод по квотам',index=False)
-        group_by.to_excel(writer, sheet_name='Свод по школам')
+
+
+
+
+
+
+
+
 
 
 
