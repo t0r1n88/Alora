@@ -1,0 +1,283 @@
+"""
+Скрипт для создания сопроводительной документации
+Основной скрипт
+"""
+import numpy as np
+from lindy_create_fis_frdo import create_fis_frdo # модуль для создания файла фис фрдо
+from lindy_decl_case import declension_fio_by_case # функция для склонения фио и создания инициалов
+from lindy_decl_case import declension_lst_fio_columns_by_case # функция для склонения колонок с фио из листа описания курса
+from lindy_generate_docs import generate_docs # модуль для создания документов
+from lindy_support_functions import * # вспомогательные функции
+import pandas as pd
+import openpyxl
+from tkinter import messagebox
+import os
+import re
+from docx.opc.exceptions import PackageNotFoundError
+import warnings
+warnings.filterwarnings('ignore', category=UserWarning, module='openpyxl')
+warnings.simplefilter(action='ignore', category=DeprecationWarning)
+warnings.simplefilter(action='ignore', category=FutureWarning)
+warnings.simplefilter(action='ignore', category=UserWarning)
+pd.options.mode.chained_assignment = None
+
+
+class NotNameColumn(Exception):
+    """
+    Исключение для обработки случая когда не совпадают названия колонок
+    """
+    pass
+
+class SameNameColumn(Exception):
+    """
+    Исключение для обработки случая когда в двух листах есть одинаковые названия колонок
+    """
+    pass
+
+class SamePathFolder(Exception):
+    """
+    Исключение для случая когда одна и та же папка выбрана в качестве источника и конечной папки
+    """
+    pass
+
+class NotFillMainValue(Exception):
+    """
+    Исключение для проверки заполнения 3 главных параметров: Наименование_программы, Тип_программы, Вид_документа
+    """
+    pass
+
+class NotReqSheet(Exception):
+    """
+    Исключение для проверки наличия трех листов: Описание, Данные физлиц, Данные юрлиц
+    """
+    pass
+
+def check_snils(snils):
+    """
+    Функция для приведения значений снилс в вид ХХХ-ХХХ-ХХХ ХХ
+    """
+    if snils is np.nan:
+        return 'Не заполнено'
+    snils = str(snils)
+    result = re.findall(r'\d', snils) # ищем цифры
+    if len(result) == 11:
+        first_group = ''.join(result[:3])
+        second_group = ''.join(result[3:6])
+        third_group = ''.join(result[6:9])
+        four_group = ''.join(result[9:11])
+
+        out_snils = f'{first_group}-{second_group}-{third_group} {four_group}'
+        return out_snils
+    else:
+        return f'Неправильное значение!В СНИЛС физического лица должно быть 11 цифр - {snils} -{len(snils)} цифр'
+
+def convert_to_date(value):
+    """
+    Функция для конвертации строки в текст
+    :param value: значение для конвертации
+    :return:
+    """
+    try:
+        if value == 'Нет статуса':
+            return ''
+        else:
+            date_value = datetime.datetime.strptime(value, '%Y-%m-%d %H:%M:%S')
+            return date_value
+    except ValueError:
+        # стандартный формат
+        result = re.search(r'^\d{2}\.\d{2}\.\d{4}$', value)
+        if result:
+            return datetime.datetime.strptime(result.group(0), '%d.%m.%Y')
+        # формат яндекс форм
+        second_result = re.search(r'^\d{4}-\d{2}-\d{2}$', value)
+        if second_result:
+            return datetime.datetime.strptime(second_result.group(0), '%Y-%m-%d')
+        else:
+            return ''
+    except:
+        return ''
+
+
+
+def create_docs(data_file:str,folder_template:str,result_folder:str,current_date):
+    """
+    Скрипт для сопроводительной документации. Точка входа
+    :param data_file: файл Excel с данными
+    :param folder_template: папка с шаблонами
+    :param result_folder: итоговая папка
+    :return: Документация в формате docx и файл ФИс-ФРДО
+    """
+    try:
+        if folder_template == result_folder:
+            raise SamePathFolder
+
+        # Проверяем наличие листов
+        required_sheets = {'Описание','Данные физлиц','Данные юрлиц'}
+        req_wb = openpyxl.load_workbook(data_file) # загружаем файл для выяснения состава листов
+        diff_sheets = required_sheets.difference(set(req_wb.sheetnames))
+        if len(diff_sheets) != 0:
+            raise NotReqSheet
+
+        # Предобработка датафрейма с данными курса
+        descr_df = pd.read_excel(data_file, sheet_name='Описание', dtype=str,usecols='A:B')  # получаем данные
+        descr_df.dropna(how='all',inplace=True) # удаляем пустые строки
+        # транспонируем
+        descr_df = descr_df.transpose()
+        descr_df.columns = descr_df.iloc[0] # устанавливаем первую строку в качестве названий колонок
+        descr_df = descr_df.iloc[1:] # удаляем первую строку
+        descr_df.index = [0] # переименовываем оставшийся индекс в 0
+        # Проверяем наличие колонок
+        desc_check_cols = {'Наименование_программы','Тип_программы','Вид_документа','Квалификация_профессия_специальность','Разряд_класс','Разряд_класс_текст','Дата_начало','Дата_конец','Объём',
+                           'Руководитель','Руководитель_подразд','Секретарь','Преподаватель','Куратор','База','Председатель_АК','Аттестация','Председатель_АК'}
+        diff_cols = desc_check_cols.difference(set(descr_df.columns))
+        if len(diff_cols) != 0:
+            raise NotNameColumn
+
+
+        descr_df = descr_df.applymap(lambda x:re.sub(r'\s+',' ',x) if isinstance(x,str) else x) # очищаем от лишних пробелов
+        descr_df = descr_df.applymap(lambda x:x.strip() if isinstance(x,str) else x) # очищаем от пробелов в начале и конце
+
+        # Получаем тип программы ДПО или ПО
+        dpo_set = {'Повышение квалификации','Профессиональная переподготовка'}
+        if descr_df.loc[0,'Тип_программы'] in dpo_set:
+            type_program = 'ДПО'
+        else:
+            type_program = 'ПО'
+        # Проверяем заполнение строк Наименование_программы, Тип_программы, Вид_документа
+        lst_check_fill_main_value = list(descr_df.iloc[0,:3])
+        if pd.isnull(lst_check_fill_main_value).any():
+            raise NotFillMainValue
+
+        # Предобработка датафрейма с данными слушателей
+        data_df = pd.read_excel(data_file, sheet_name='Данные физлиц', dtype=str)  # получаем данные
+        # Проверяем наличие нужных колонок в файле с данными
+        check_columns_data = {'Номер_удостоверения','Рег_номер','Дата_рождения','Пол','СНИЛС'} # проверяемые колонки
+        diff_cols = check_columns_data.difference(set(data_df.columns))
+        if len(diff_cols) != 0:
+            raise NotNameColumn  # если есть разница вызываем и обрабатываем исключение
+        data_df.dropna(how='all',inplace=True) # удаляем пустые строки
+        # Обрабатываем вариант создаем доп колонки связанные с ФИО
+        data_df = declension_fio_by_case(data_df,result_folder)
+        if 'ФИО_представителя' in data_df.columns:
+            data_df = declension_lst_fio_columns_by_case(data_df,['ФИО_представителя'])
+
+
+        # Обрабатываем колонки из датафрейма с описанием курса склоняя по падежам и создавая иницииалы
+        descr_fio_cols =['Руководитель','Руководитель_подразд','Секретарь','Преподаватель','Куратор','Председатель_АК'] # список колонок для которых нужно создать падежи и инициалы
+        descr_df = declension_lst_fio_columns_by_case(descr_df,descr_fio_cols)
+
+        """
+            Конвертируем даты из формата ГГГГ-ММ-ДД в ДД.ММ.ГГГГ
+            """
+        # делаем строковыми названия колонок
+        descr_df.columns = list(map(str,descr_df.columns))
+        data_df.columns = list(map(str,data_df.columns))
+
+        # проверяем на совпадение названий колонок в обоих листах
+        intersection_columns = set(descr_df.columns).intersection(set(data_df.columns))
+        if len(intersection_columns) > 0:
+            raise SameNameColumn
+
+        # Обрабатываем колонки с датами в описании
+        lst_date_columns_descr = []  # список для колонок с датами
+        for idx, column in enumerate(descr_df.columns):
+            if 'дата' in column.lower():
+                lst_date_columns_descr.append(idx)
+
+        descr_df = convert_string_date(descr_df,lst_date_columns_descr)
+        # обрабатываем колонки с датами в списке
+        lst_date_columns_data = []  # список для колонок с датами
+        for idx, column in enumerate(data_df.columns):
+            if 'дата' in column.lower():
+                lst_date_columns_data.append(column)
+        data_df[lst_date_columns_data] = data_df[lst_date_columns_data].applymap(convert_to_date)  # Приводим к типу
+
+        # Создаем отдельные датайфреймы для совершеннолетних и несовершеннолетних
+        adult_df, minor_df = create_age_border(data_df.copy(),current_date)
+
+        data_df[lst_date_columns_data] = data_df[lst_date_columns_data].applymap(
+            lambda x: x.strftime('%d.%m.%Y') if isinstance(x, (pd.Timestamp, datetime.datetime)) and pd.notna(x) else x)
+
+        adult_df[lst_date_columns_data] = adult_df[lst_date_columns_data].applymap(
+            lambda x: x.strftime('%d.%m.%Y') if isinstance(x, (pd.Timestamp, datetime.datetime)) and pd.notna(x) else x)
+
+        minor_df[lst_date_columns_data] = minor_df[lst_date_columns_data].applymap(
+            lambda x: x.strftime('%d.%m.%Y') if isinstance(x, (pd.Timestamp, datetime.datetime)) and pd.notna(x) else x)
+
+        # Обрабатываем колонку с СНИЛС
+        data_df['СНИЛС'] = data_df['СНИЛС'].apply(check_snils)
+
+        # Создаем файл ФИС-ФРДО Если нет папки или файлов то ничего не создаем
+        if os.path.exists(f'{folder_template}/ФИС-ФРДО/Шаблон ФИС-ФРДО ДПО.xlsx') and os.path.exists(f'{folder_template}/ФИС-ФРДО/Шаблон ФИС-ФРДО ПО.xlsx'):
+            create_fis_frdo(data_df,descr_df,folder_template,result_folder,type_program,descr_df['Вид_документа'].values[0])
+        else:
+            messagebox.showwarning('Линди Создание документов ДПО,ПО',f'ПРЕДУПРЕЖДЕНИЕ !!!\n В папке {folder_template} не найдена папка ФИС-ФРДО или файлы шаблонов в этой папке.\n'
+                                   'В папке ФИС-ФРДО должно быть 2 файла, эти файлы должны иметь название Шаблон ФИС-ФРДО ПО и Шаблон ФИС-ФРДО ДПО.\n'
+                                                                'Отсутствие этой папки НЕ ПОВЛИЯЕТ на создание остальных документов.')
+
+        # создаем словари с данными для колонок описания программы
+
+        # получаем списки валидных названий колонок
+        descr_valid_cols,descr_not_valid_cols = selection_name_column(list(descr_df.columns),r'^[a-zA-ZЁёа-яА-Я_]+$')
+        data_valid_cols, data_not_valid_cols = selection_name_column(list(data_df.columns),r'^[a-zA-ZЁёа-яА-Я_]+$')
+
+        # заполняем наны пробелами
+        descr_df.fillna(' ',inplace=True)
+        data_df.fillna(' ',inplace=True)
+        adult_df.fillna(' ',inplace=True)
+        minor_df.fillna(' ',inplace=True)
+
+        # Словарь с описанием курса
+        dct_descr = dict()
+        for name_column in descr_valid_cols:
+            dct_descr[name_column] = descr_df.loc[0,name_column]
+        type_form = 'ФЛ'  # указываем физлицо или юрлицо
+        generate_docs(dct_descr,data_df[data_valid_cols],folder_template,result_folder,type_program,type_form,adult_df,minor_df)
+
+    except NotNameColumn:
+        messagebox.showerror('Линди Создание документов ДПО,ПО',
+                             f'В файле {data_file} не найдены следующие колонки {diff_cols}')
+    except SameNameColumn:
+        messagebox.showerror('Линди Создание документов ДПО,ПО',
+                             f'На листе с описанием и на листе со списком найдены одинаковые названия колонок {intersection_columns}\n'
+                             f'переименуйте колонки')
+
+    except SamePathFolder:
+        messagebox.showerror('Линди Создание документов ДПО,ПО',
+                             f'Выбрана одна и та же папка в качесте исходной и конечной.\n'
+                             f'Исходная и конечная папки должны быть разными !!!')
+    except NotFillMainValue:
+        messagebox.showerror('Линди Создание документов ДПО,ПО',
+                             f'Заполните значения: Наименование_программы,Тип_программы,\nВид_документа !')
+    except NotReqSheet:
+        messagebox.showerror('Линди Создание документов ДПО,ПО',
+                             f'В файле с данными курса не найдены обязательные листы {diff_sheets}')
+    except PermissionError as e:
+        messagebox.showerror('Линди Создание документов ДПО,ПО',
+                             f'Закройте файлы созданные программой')
+    except FileNotFoundError as e:
+        messagebox.showerror('Линди Создание документов ДПО,ПО',
+                             f'Не удалось создать файл с названием {e}\n'
+                             f'Уменьшите количество символов в соответствующей строке или выберите более короткий путь к итоговой папке')
+    except PackageNotFoundError as e:
+        messagebox.showerror('Веста Обработка таблиц и создание документов',
+                             f'Не удалось создать файл с названием {e}\n'
+                             f'Уменьшите количество символов в соответствующей строке файла с данными в колонке по которой создаются имена файлов или выберите более короткий путь к итоговой папке')
+
+
+
+
+
+
+if __name__ == '__main__':
+    main_data_file = 'data/Пример заполнения Для первой профессии.xlsx'
+    # main_data_file = 'data/Демоэкзамен курс.xlsx'
+    # main_data_file = 'data/Данные по курсу Базовый вариант.xlsx'
+    # main_data_file = 'data/Данные по курсу несовершеннолетние.xlsx'
+    # main_data_file = 'data/Пустая таблица для заполнения курсов.xlsx'
+    main_folder_template = 'data/ПО Шаблоны Бюджет'
+    main_result_folder = 'data/Результат'
+    main_current_date = '09.10.2025'
+
+    create_docs(main_data_file,main_folder_template,main_result_folder,main_current_date)
+    print('Lindy Booth !!!')
