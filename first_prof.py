@@ -333,9 +333,6 @@ def processing_data_first_prof(path_to_data:str,result_folder:str):
         df['Электронная почта законного представителя'] = df['Электронная почта законного представителя'].apply(
             lambda x: re.sub(r'\s', '', x) if x != 'Ошибка: Не заполнено' else x)
 
-        # Ищем смешение английских и русских букв
-        df = df.applymap(find_mixing_alphabets)  # ищем смешения
-
         # Обновляем индекс
         df.index = list(range(len(df)))
 
