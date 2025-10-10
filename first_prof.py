@@ -10,9 +10,9 @@ from openpyxl.utils import get_column_letter
 from openpyxl.styles import Font, PatternFill
 import os
 import random
-
 import time
-
+from tkinter import messagebox
+from docx.opc.exceptions import PackageNotFoundError
 
 def capitalize_fio(value:str)->str:
     """
@@ -278,251 +278,230 @@ def processing_data_first_prof(path_to_data:str,result_folder:str):
     :param result_folder: Конечная папка
     :return:
     """
+    try:
 
-    # получаем время
-    t = time.localtime()
-    current_time = time.strftime('%H_%M на %d.%m', t)
+        # получаем время
+        t = time.localtime()
+        current_time = time.strftime('%H_%M на %d.%m', t)
 
-    begin_df = pd.read_excel(path_to_data,dtype=str)
-    number_mun = list(begin_df.columns).index('Выберите свой муниципалитет (район)') # Индекс колонки с муниципалитетом
-    column_shool = list(begin_df.columns).index('Введите свою школу') # Индекс колонки с муниципалитетом
+        begin_df = pd.read_excel(path_to_data,dtype=str)
+        number_mun = list(begin_df.columns).index('Выберите свой муниципалитет (район)') # Индекс колонки с муниципалитетом
+        column_shool = list(begin_df.columns).index('Введите свою школу') # Индекс колонки с муниципалитетом
 
-    lst_school = []
+        lst_school = []
 
-    for row in begin_df.iloc[:,number_mun+1:column_shool+1].itertuples():
-        tmp_lst = list(row[1:])
-        out_value = [value for value in tmp_lst if pd.notna(value)][0]
-        lst_school.append(out_value)
+        for row in begin_df.iloc[:,number_mun+1:column_shool+1].itertuples():
+            tmp_lst = list(row[1:])
+            out_value = [value for value in tmp_lst if pd.notna(value)][0]
+            lst_school.append(out_value)
 
 
-    begin_df['Школа'] = lst_school
-    # Начинаем собирать итоговый датафрейм
-    df = begin_df[['Выберите свой муниципалитет (район)','Школа','Класс','Фамилия обучающегося','Имя обучающегося','Отчество обучающегося(при наличии)',
-                   'Дата рождения обучающегося','Пол обучающегося','СНИЛС обучающегося','Фото СНИЛС обучающегося',
-                   'Контактный телефон обучающегося','Гражданство обучающегося','Введите гражданство','Серия паспорта обучающегося',
-                   'Номер паспорта обучающегося','Кем выдан паспорт обучающегося','Дата выдачи паспорта обучающегося',
-                   'ФИО законного представителя','Серия паспорта законного представителя','Номер паспорта законного представителя',
-                   'Кем выдан паспорт законного представителя','Дата выдачи паспорта законного представителя','Номер и серия свидетельства о рождении обучающегося',
-                   'Дата выдачи свидетельства о рождении обучающегося','Сведения_об_ОВЗ','Номер телефона законного представителя','Электронная почта законного представителя']]
+        begin_df['Школа'] = lst_school
+        # Начинаем собирать итоговый датафрейм
+        df = begin_df[['Выберите свой муниципалитет (район)','Школа','Класс','Фамилия обучающегося','Имя обучающегося','Отчество обучающегося(при наличии)',
+                       'Дата рождения обучающегося','Пол обучающегося','СНИЛС обучающегося','Фото СНИЛС обучающегося',
+                       'Контактный телефон обучающегося','Гражданство обучающегося','Введите гражданство','Серия паспорта обучающегося',
+                       'Номер паспорта обучающегося','Кем выдан паспорт обучающегося','Дата выдачи паспорта обучающегося',
+                       'ФИО законного представителя','Серия паспорта законного представителя','Номер паспорта законного представителя',
+                       'Кем выдан паспорт законного представителя','Дата выдачи паспорта законного представителя','Номер и серия свидетельства о рождении обучающегося',
+                       'Дата выдачи свидетельства о рождении обучающегося','Сведения_об_ОВЗ','Номер телефона законного представителя','Электронная почта законного представителя']]
 
 
-    df = df.applymap(lambda x: x.strip() if isinstance(x,str) else x)
-    df.rename(columns={'Выберите свой муниципалитет (район)':'Муниципалитет'},inplace=True)
+        df = df.applymap(lambda x: x.strip() if isinstance(x,str) else x)
+        df.rename(columns={'Выберите свой муниципалитет (район)':'Муниципалитет'},inplace=True)
 
-    # Исправляем файл с данными учащихся
-    # ФИО
-    part_fio_columns = ['Фамилия обучающегося', 'Имя обучающегося', 'Отчество обучающегося(при наличии)', 'ФИО законного представителя']  # колонки с типичными названиями
-    df = prepare_fio_text_columns(df, part_fio_columns)  # очищаем колонки с фио
+        # Исправляем файл с данными учащихся
+        # ФИО
+        part_fio_columns = ['Фамилия обучающегося', 'Имя обучающегося', 'Отчество обучающегося(при наличии)', 'ФИО законного представителя']  # колонки с типичными названиями
+        df = prepare_fio_text_columns(df, part_fio_columns)  # очищаем колонки с фио
 
-    # СНИЛС
-    df['СНИЛС обучающегося'] = df['СНИЛС обучающегося'].apply(check_snils)
-    dupl_snils = df[df['СНИЛС обучающегося'].duplicated(keep=False)]  # получаем дубликаты
-    dupl_snils.to_excel(f'{result_folder}/Дубликаты по СНИЛС.xlsx',index=False)
-    df = df.drop_duplicates(subset='СНИЛС обучающегося',keep='last') # оставляем только последнее вхождение
-    # Паспортные данные
-    prepared_columns_series_lst = ['Серия паспорта обучающегося','Серия паспорта законного представителя']
-    prepared_columns_number_lst = ['Номер паспорта обучающегося','Номер паспорта законного представителя']
-    df[prepared_columns_series_lst] = df[prepared_columns_series_lst].applymap(
-        check_series_passport)  # обрабатываем серию паспорта
-
-    df[prepared_columns_number_lst] = df[prepared_columns_number_lst].applymap(
-        check_number_passport)  # обрабатываем номер паспорта
-
-    df['Электронная почта законного представителя'] = df['Электронная почта законного представителя'].fillna('Ошибка: Не заполнено')
-    df['Электронная почта законного представителя'] = df['Электронная почта законного представителя'].apply(
-        lambda x: re.sub(r'\s', '', x) if x != 'Ошибка: Не заполнено' else x)
-
-    # Ищем смешение английских и русских букв
-    df = df.applymap(find_mixing_alphabets)  # ищем смешения
-
-    # Обновляем индекс
-    df.index = list(range(len(df)))
-
-    # Сохраняем датафрейм с ошибками разделенными по листам в соответсвии с колонками
-    dct_sheet_error_df = dict()  # создаем словарь для хранения названия и датафрейма
-
-    lst_name_columns = [name_cols for name_cols in df.columns if 'Unnamed' not in name_cols]  # получаем список колонок
-
-    for idx, value in enumerate(lst_name_columns):
-        # получаем ошибки
-        temp_df = df[df[value].astype(str).str.contains('Ошибка')]  # фильтруем
-        if temp_df.shape[0] == 0:
-            continue
-
-        temp_df = temp_df[value].to_frame()  # оставляем только одну колонку
-
-        temp_df.insert(0, '№ строки с ошибкой в исходном файле', list(map(lambda x: x + 2, list(temp_df.index))))
-        dct_sheet_error_df[value[:30]] = temp_df
-
-    file_error_wb = write_df_to_excel_cheking_egisso(dct_sheet_error_df, write_index=False)
-    file_error_wb = del_sheet(file_error_wb, ['Sheet', 'Sheet1', 'Для подсчета'])
-    file_error_wb.save(f'{result_folder}/Ошибки {current_time}.xlsx')
-
-
-
-
-
-
-
-
-    group_by = df.groupby(['Муниципалитет','Школа']).agg({'Фамилия обучающегося':'count'})
-    group_by.rename(columns={'Фамилия обучающегося':'Количество зарегистрировавшихся'},inplace=True)
-
-    dct_quota = {'Бичурский район':20,
-                 'Заиграевский район':20,
-                 'Закаменский район':30,
-                 'Иволгинский район':30,
-                 'Кабанский район':20,
-                 'Кижингинский район':10,
-                 'Курумканский район':30,
-                 'Кяхтинский район':30,
-                 'Мухоршибирский район':20,
-                 'Селенгинский район':30,
-                 'г. Северобайкальск':30,
-                 'Хоринский район':10,
-                 'Баунтовский (Эвенкийский) район':10,
-                 'Прибайкальский район':10,
-                 'Северобайкальский район':10,
-                 'Тарбагатайский район':10,
-                 'Баргузинский район':10,
-                 'Джидинский район':10,
-                 'Еравнинский район':10,
-                 }
-
-
-    quota_df = pd.DataFrame(columns=['Муниципалитет','Квота'])
-    quota_df['Муниципалитет'] = dct_quota.keys()
-    quota_df['Квота'] = dct_quota.values()
-
-    group_mun = df.groupby(['Муниципалитет']).agg({'Фамилия обучающегося':'count'})
-    group_mun.rename(columns={'Фамилия обучающегося':'Количество зарегистрировавшихся'},inplace=True)
-    group_mun = group_mun.reset_index()
-
-    quota_df = pd.merge(quota_df,group_mun,how='outer',left_on='Муниципалитет',right_on='Муниципалитет')
-    quota_df.fillna(0,inplace=True)
-    quota_df['Осталось до выполнения квоты'] = quota_df['Квота'] -quota_df['Количество зарегистрировавшихся']
-    sum_row = quota_df.sum(axis=0,numeric_only=True)
-    sum_row = sum_row.rename('Итого').to_frame().transpose()
-    quota_df = pd.concat([quota_df,sum_row])
-    quota_df.loc['Итого','Муниципалитет'] = 'Итого'
-    with pd.ExcelWriter(f'{result_folder}/Сводка Первая профессия в {current_time}.xlsx') as writer:
-        quota_df.to_excel(writer, sheet_name='Свод по квотам',index=False)
-        group_by.to_excel(writer, sheet_name='Свод по школам')
-
-
-    # Создание списков по муниципалитетам и списка для загрузки в мудл
-    # создаем папку
-    if not os.path.exists(f'{result_folder}/{"Списки по муниципалитетам"}'):
-        os.makedirs(f'{result_folder}/{"Списки по муниципалитетам"}')
-
-    moodle_df = df.copy() # копируем
-    lst_username = [f'fp25_student{idx}' for idx in range(1,len(moodle_df)+1)]
-    lst_password = [f'{random.randint(10000, 99999)}' for idx in range(1,len(moodle_df)+1)]
-    lst_email = [f'fp25_student{idx}@mail.ru' for idx in range(1,len(moodle_df)+1)]
-    moodle_df['Логин'] = lst_username
-    moodle_df['Пароль'] = lst_password
-    moodle_df['email'] = lst_email
-    moodle_df['cohort1'] = moodle_df['Муниципалитет'].apply(create_cohort)
-    moodle_df['ФИО'] = moodle_df['Фамилия обучающегося'] + ' ' + moodle_df['Имя обучающегося'] + ' '+ moodle_df['Отчество обучающегося(при наличии)']
-
-    # Сохраняем файл для мудл
-    out_moodle_df = moodle_df[['Логин','Пароль','Имя обучающегося','Фамилия обучающегося','email','cohort1']]
-    out_moodle_df.columns = ['username','password','firstname','lastname','email','cohort1']
-    out_moodle_df.to_excel(f'{result_folder}/Файл для MOODLE-{len(out_moodle_df)} строк.xlsx',index=False)
-
-    # Сохраняем списки по муниципалитетам
-    lst_value_column = moodle_df['Муниципалитет'].unique()
-
-    for idx, value in enumerate(lst_value_column):
-        wb = openpyxl.Workbook()  # создаем файл
-        temp_df = moodle_df[moodle_df['Муниципалитет'] == value]  # отфильтровываем по значению
-        temp_df = temp_df[['Школа','Класс','ФИО','Логин','Пароль','Номер телефона законного представителя']]
-        # short_name = value[:40]  # получаем обрезанное значение
-        # short_name = re.sub(r'[\r\b\n\t\'+()<> :"?*|\\/]', '_', short_name)
-        for row in dataframe_to_rows(temp_df, index=False, header=True):
-            wb['Sheet'].append(row)
-
-        # Устанавливаем автоширину для каждой колонки
-        for column in wb['Sheet'].columns:
-            max_length = 0
-            column_name = get_column_letter(column[0].column)
-            for cell in column:
-                try:
-                    if len(str(cell.value)) > max_length:
-                        max_length = len(cell.value)
-                except:
-                    pass
-            adjusted_width = (max_length + 2)
-            wb['Sheet'].column_dimensions[column_name].width = adjusted_width
-
-        wb.save(f'{result_folder}/Списки по муниципалитетам/{value} учеников-{len(temp_df)}.xlsx')
-        wb.close()
-
-
-    # Сохраняем в формате для линди
-    df = df.rename(columns={'Фамилия обучающегося':'Фамилия','Имя обучающегося':'Имя',
-                       'Отчество обучающегося(при наличии)':'Отчество','Дата рождения обучающегося':'Дата_рождения',
-                       'Пол обучающегося':'Пол','СНИЛС обучающегося':'СНИЛС',
-                       'Гражданство обучающегося':'Гражданство','Фото СНИЛС обучающегося':'Фото_СНИЛС',
-                       'Серия паспорта обучающегося':'Серия_паспорта','Номер паспорта обучающегося':'Номер_паспорта',
-                       'Кем выдан паспорт обучающегося':'Кем_выдан_паспорт','Дата выдачи паспорта обучающегося':'Дата_выдачи_паспорта',
-                       'ФИО законного представителя':'ФИО_представителя','Серия паспорта законного представителя':'Серия_паспорта_представителя',
-                       'Номер паспорта законного представителя':'Номер_паспорта_представителя','Кем выдан паспорт законного представителя':'Кем_выдан_паспорт_представителя',
-                       'Дата выдачи паспорта законного представителя':'Дата_выдачи_паспорта_представителя',
-                       'Номер и серия свидетельства о рождении обучающегося':'Свидетельство_рождения',
-                       'Дата выдачи свидетельства о рождении обучающегося':'Дата_выдачи_свидетельства',
-                       'Номер телефона законного представителя':'Номер_телефона',
-                       'Электронная почта законного представителя':'Электронная_почта',
-                            })
-    df['Номер_удостоверения'] = None
-    df['Рег_номер'] = None
-    df['Дата_выдачи'] = None
-    df['Номер_договор'] = None
-    df['Уровень_образования'] = None
-    df['Фамилия_в_дипломе'] = None
-    df['Серия_диплома'] = None
-    df['Номер_диплома'] = None
-
-
-    main_file_wb = write_df_error_egisso_to_excel({'Общий свод': df}, write_index=False)
-    main_file_wb = del_sheet(main_file_wb, ['Sheet', 'Sheet1', 'Для подсчета'])
-    main_file_wb.save(f'{result_folder}/Список Первая профессия {len(df)}чел. в {current_time}.xlsx')
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+        # СНИЛС
+        df['СНИЛС обучающегося'] = df['СНИЛС обучающегося'].apply(check_snils)
+        dupl_snils = df[df['СНИЛС обучающегося'].duplicated(keep=False)]  # получаем дубликаты
+        dupl_snils.to_excel(f'{result_folder}/Дубликаты по СНИЛС.xlsx',index=False)
+        df = df.drop_duplicates(subset='СНИЛС обучающегося',keep='last') # оставляем только последнее вхождение
+        # Паспортные данные
+        prepared_columns_series_lst = ['Серия паспорта обучающегося','Серия паспорта законного представителя']
+        prepared_columns_number_lst = ['Номер паспорта обучающегося','Номер паспорта законного представителя']
+        df[prepared_columns_series_lst] = df[prepared_columns_series_lst].applymap(
+            check_series_passport)  # обрабатываем серию паспорта
+
+        df[prepared_columns_number_lst] = df[prepared_columns_number_lst].applymap(
+            check_number_passport)  # обрабатываем номер паспорта
+
+        df['Электронная почта законного представителя'] = df['Электронная почта законного представителя'].fillna('Ошибка: Не заполнено')
+        df['Электронная почта законного представителя'] = df['Электронная почта законного представителя'].apply(
+            lambda x: re.sub(r'\s', '', x) if x != 'Ошибка: Не заполнено' else x)
+
+        # Ищем смешение английских и русских букв
+        df = df.applymap(find_mixing_alphabets)  # ищем смешения
+
+        # Обновляем индекс
+        df.index = list(range(len(df)))
+
+        # Сохраняем датафрейм с ошибками разделенными по листам в соответсвии с колонками
+        dct_sheet_error_df = dict()  # создаем словарь для хранения названия и датафрейма
+
+        lst_name_columns = [name_cols for name_cols in df.columns if 'Unnamed' not in name_cols]  # получаем список колонок
+
+        for idx, value in enumerate(lst_name_columns):
+            # получаем ошибки
+            temp_df = df[df[value].astype(str).str.contains('Ошибка')]  # фильтруем
+            if temp_df.shape[0] == 0:
+                continue
+
+            temp_df = temp_df[value].to_frame()  # оставляем только одну колонку
+
+            temp_df.insert(0, '№ строки с ошибкой в исходном файле', list(map(lambda x: x + 2, list(temp_df.index))))
+            dct_sheet_error_df[value[:30]] = temp_df
+
+        file_error_wb = write_df_to_excel_cheking_egisso(dct_sheet_error_df, write_index=False)
+        file_error_wb = del_sheet(file_error_wb, ['Sheet', 'Sheet1', 'Для подсчета'])
+        file_error_wb.save(f'{result_folder}/Ошибки {current_time}.xlsx')
+
+
+
+
+
+
+
+
+        group_by = df.groupby(['Муниципалитет','Школа']).agg({'Фамилия обучающегося':'count'})
+        group_by.rename(columns={'Фамилия обучающегося':'Количество зарегистрировавшихся'},inplace=True)
+
+        dct_quota = {'Бичурский район':20,
+                     'Заиграевский район':20,
+                     'Закаменский район':30,
+                     'Иволгинский район':30,
+                     'Кабанский район':20,
+                     'Кижингинский район':10,
+                     'Курумканский район':30,
+                     'Кяхтинский район':30,
+                     'Мухоршибирский район':20,
+                     'Селенгинский район':30,
+                     'г. Северобайкальск':30,
+                     'Хоринский район':10,
+                     'Баунтовский (Эвенкийский) район':10,
+                     'Прибайкальский район':10,
+                     'Северобайкальский район':10,
+                     'Тарбагатайский район':10,
+                     'Баргузинский район':10,
+                     'Джидинский район':10,
+                     'Еравнинский район':10,
+                     }
+
+
+        quota_df = pd.DataFrame(columns=['Муниципалитет','Квота'])
+        quota_df['Муниципалитет'] = dct_quota.keys()
+        quota_df['Квота'] = dct_quota.values()
+
+        group_mun = df.groupby(['Муниципалитет']).agg({'Фамилия обучающегося':'count'})
+        group_mun.rename(columns={'Фамилия обучающегося':'Количество зарегистрировавшихся'},inplace=True)
+        group_mun = group_mun.reset_index()
+
+        quota_df = pd.merge(quota_df,group_mun,how='outer',left_on='Муниципалитет',right_on='Муниципалитет')
+        quota_df.fillna(0,inplace=True)
+        quota_df['Осталось до выполнения квоты'] = quota_df['Квота'] -quota_df['Количество зарегистрировавшихся']
+        sum_row = quota_df.sum(axis=0,numeric_only=True)
+        sum_row = sum_row.rename('Итого').to_frame().transpose()
+        quota_df = pd.concat([quota_df,sum_row])
+        quota_df.loc['Итого','Муниципалитет'] = 'Итого'
+        with pd.ExcelWriter(f'{result_folder}/Сводка Первая профессия в {current_time}.xlsx') as writer:
+            quota_df.to_excel(writer, sheet_name='Свод по квотам',index=False)
+            group_by.to_excel(writer, sheet_name='Свод по школам')
+
+
+        # Создание списков по муниципалитетам и списка для загрузки в мудл
+        # создаем папку
+        if not os.path.exists(f'{result_folder}/{"Списки по муниципалитетам"}'):
+            os.makedirs(f'{result_folder}/{"Списки по муниципалитетам"}')
+
+        moodle_df = df.copy() # копируем
+        lst_username = [f'fp25_student{idx}' for idx in range(1,len(moodle_df)+1)]
+        lst_password = [f'{random.randint(10000, 99999)}' for idx in range(1,len(moodle_df)+1)]
+        lst_email = [f'fp25_student{idx}@mail.ru' for idx in range(1,len(moodle_df)+1)]
+        moodle_df['Логин'] = lst_username
+        moodle_df['Пароль'] = lst_password
+        moodle_df['email'] = lst_email
+        moodle_df['cohort1'] = moodle_df['Муниципалитет'].apply(create_cohort)
+        moodle_df['ФИО'] = moodle_df['Фамилия обучающегося'] + ' ' + moodle_df['Имя обучающегося'] + ' '+ moodle_df['Отчество обучающегося(при наличии)']
+
+        # Сохраняем файл для мудл
+        out_moodle_df = moodle_df[['Логин','Пароль','Имя обучающегося','Фамилия обучающегося','email','cohort1']]
+        out_moodle_df.columns = ['username','password','firstname','lastname','email','cohort1']
+        out_moodle_df.to_excel(f'{result_folder}/Файл для MOODLE-{len(out_moodle_df)} строк.xlsx',index=False)
+
+        # Сохраняем списки по муниципалитетам
+        lst_value_column = moodle_df['Муниципалитет'].unique()
+
+        for idx, value in enumerate(lst_value_column):
+            wb = openpyxl.Workbook()  # создаем файл
+            temp_df = moodle_df[moodle_df['Муниципалитет'] == value]  # отфильтровываем по значению
+            temp_df = temp_df[['Школа','Класс','ФИО','Логин','Пароль','Номер телефона законного представителя']]
+            # short_name = value[:40]  # получаем обрезанное значение
+            # short_name = re.sub(r'[\r\b\n\t\'+()<> :"?*|\\/]', '_', short_name)
+            for row in dataframe_to_rows(temp_df, index=False, header=True):
+                wb['Sheet'].append(row)
+
+            # Устанавливаем автоширину для каждой колонки
+            for column in wb['Sheet'].columns:
+                max_length = 0
+                column_name = get_column_letter(column[0].column)
+                for cell in column:
+                    try:
+                        if len(str(cell.value)) > max_length:
+                            max_length = len(cell.value)
+                    except:
+                        pass
+                adjusted_width = (max_length + 2)
+                wb['Sheet'].column_dimensions[column_name].width = adjusted_width
+
+            wb.save(f'{result_folder}/Списки по муниципалитетам/{value} учеников-{len(temp_df)}.xlsx')
+            wb.close()
+
+
+        # Сохраняем в формате для линди
+        df = df.rename(columns={'Фамилия обучающегося':'Фамилия','Имя обучающегося':'Имя',
+                           'Отчество обучающегося(при наличии)':'Отчество','Дата рождения обучающегося':'Дата_рождения',
+                           'Пол обучающегося':'Пол','СНИЛС обучающегося':'СНИЛС',
+                           'Гражданство обучающегося':'Гражданство','Фото СНИЛС обучающегося':'Фото_СНИЛС',
+                           'Серия паспорта обучающегося':'Серия_паспорта','Номер паспорта обучающегося':'Номер_паспорта',
+                           'Кем выдан паспорт обучающегося':'Кем_выдан_паспорт','Дата выдачи паспорта обучающегося':'Дата_выдачи_паспорта',
+                           'ФИО законного представителя':'ФИО_представителя','Серия паспорта законного представителя':'Серия_паспорта_представителя',
+                           'Номер паспорта законного представителя':'Номер_паспорта_представителя','Кем выдан паспорт законного представителя':'Кем_выдан_паспорт_представителя',
+                           'Дата выдачи паспорта законного представителя':'Дата_выдачи_паспорта_представителя',
+                           'Номер и серия свидетельства о рождении обучающегося':'Свидетельство_рождения',
+                           'Дата выдачи свидетельства о рождении обучающегося':'Дата_выдачи_свидетельства',
+                           'Номер телефона законного представителя':'Номер_телефона',
+                           'Электронная почта законного представителя':'Электронная_почта',
+                                })
+        df['Номер_удостоверения'] = None
+        df['Рег_номер'] = None
+        df['Дата_выдачи'] = None
+        df['Номер_договор'] = None
+        df['Уровень_образования'] = None
+        df['Фамилия_в_дипломе'] = None
+        df['Серия_диплома'] = None
+        df['Номер_диплома'] = None
+
+
+        main_file_wb = write_df_error_egisso_to_excel({'Общий свод': df}, write_index=False)
+        main_file_wb = del_sheet(main_file_wb, ['Sheet', 'Sheet1', 'Для подсчета'])
+        main_file_wb.save(f'{result_folder}/Список Первая профессия {len(df)}чел. в {current_time}.xlsx')
+
+    except PermissionError as e:
+        messagebox.showerror('Алора',
+                             f'Закройте файлы созданные программой')
+    except FileNotFoundError as e:
+        messagebox.showerror('Алора',
+                             f'Не удалось создать файл с названием {e}\n'
+                             f'Уменьшите количество символов в соответствующей строке или выберите более короткий путь к итоговой папке')
+    except PackageNotFoundError as e:
+        messagebox.showerror('Алора',
+                             f'Не удалось создать файл с названием {e}\n'
+                             f'Уменьшите количество символов в соответствующей строке файла с данными в колонке по которой создаются имена файлов или выберите более короткий путь к итоговой папке')
+    else:
+        messagebox.showinfo('Алора', 'Создание документов успешно завершено !')
 
 
 if __name__ == '__main__':

@@ -1,3 +1,4 @@
+from  first_prof import processing_data_first_prof # для обработки файла первой профессии
 import tkinter
 import sys
 import os
@@ -163,13 +164,22 @@ def select_result_yandex_first_prof_folder():
     path_to_first_prof_end_folder = filedialog.askdirectory()
 
 
+def processing_preparation_yandex_first_prof():
+    """
+    Функция для генерации документов
+    """
+    try:
+        processing_data_first_prof(data_yandex_first_prof,path_to_first_prof_end_folder)
 
+    except NameError:
+        messagebox.showerror('',
+                             f'Выберите файл с данными и папку куда будет генерироваться файл')
 
 
 
 if __name__ == '__main__':
     window = Tk()
-    window.title('Веста Обработка таблиц и создание документов ver 1.50')
+    window.title('Алора ver 1.0')
     # Устанавливаем размер и положение окна
     set_window_size(window)
     # window.geometry('774x760')
@@ -231,9 +241,9 @@ if __name__ == '__main__':
 
     # Создаем кнопку слияния
 
-    btn_template_process = Button(tab_template, text='5) Выполнить обработку',
+    btn_template_process = Button(tab_template, text='3) Выполнить обработку',
                                   font=('Arial Bold', 20),
-                                  command=processing_template)
+                                  command=processing_preparation_yandex_first_prof)
     btn_template_process.pack(padx=10, pady=10)
 
 
