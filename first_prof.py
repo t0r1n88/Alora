@@ -319,7 +319,7 @@ def processing_data_first_prof(path_to_data:str,result_folder:str):
         df['СНИЛС обучающегося'] = df['СНИЛС обучающегося'].apply(check_snils)
         dupl_snils = df[df['СНИЛС обучающегося'].duplicated(keep=False)]  # получаем дубликаты
         dupl_snils.to_excel(f'{result_folder}/Дубликаты по СНИЛС.xlsx',index=False)
-        df = df.drop_duplicates(subset='СНИЛС обучающегося',keep='last') # оставляем только последнее вхождение
+
         # Паспортные данные
         prepared_columns_series_lst = ['Серия паспорта обучающегося','Серия паспорта законного представителя']
         prepared_columns_number_lst = ['Номер паспорта обучающегося','Номер паспорта законного представителя']
@@ -350,6 +350,7 @@ def processing_data_first_prof(path_to_data:str,result_folder:str):
             temp_df = temp_df[value].to_frame()  # оставляем только одну колонку
 
             temp_df.insert(0, '№ строки с ошибкой в исходном файле', list(map(lambda x: x + 2, list(temp_df.index))))
+            temp_df = temp_df.drop_duplicates(subset=value, keep='last')  # оставляем только последнее вхождение
             dct_sheet_error_df[value[:30]] = temp_df
 
         file_error_wb = write_df_to_excel_cheking_egisso(dct_sheet_error_df, write_index=False)
@@ -357,11 +358,7 @@ def processing_data_first_prof(path_to_data:str,result_folder:str):
         file_error_wb.save(f'{result_folder}/Ошибки {current_time}.xlsx')
 
 
-
-
-
-
-
+        df = df.drop_duplicates(subset='СНИЛС обучающегося',keep='last') # оставляем только последнее вхождение
 
         group_by = df.groupby(['Муниципалитет','Школа']).agg({'Фамилия обучающегося':'count'})
         group_by.rename(columns={'Фамилия обучающегося':'Количество зарегистрировавшихся'},inplace=True)
@@ -398,11 +395,13 @@ def processing_data_first_prof(path_to_data:str,result_folder:str):
 
         quota_df = pd.merge(quota_df,group_mun,how='outer',left_on='Муниципалитет',right_on='Муниципалитет')
         quota_df.fillna(0,inplace=True)
+        quota_df['% Выполнения квоты'] = round((quota_df['Количество зарегистрировавшихся'] / quota_df['Квота']) * 100,1)
         quota_df['Осталось до выполнения квоты'] = quota_df['Квота'] -quota_df['Количество зарегистрировавшихся']
         sum_row = quota_df.sum(axis=0,numeric_only=True)
         sum_row = sum_row.rename('Итого').to_frame().transpose()
         quota_df = pd.concat([quota_df,sum_row])
         quota_df.loc['Итого','Муниципалитет'] = 'Итого'
+        quota_df.loc['Итого','% Выполнения квоты'] = ''
         with pd.ExcelWriter(f'{result_folder}/Сводка Первая профессия в {current_time}.xlsx') as writer:
             quota_df.to_excel(writer, sheet_name='Свод по квотам',index=False)
             group_by.to_excel(writer, sheet_name='Свод по школам')
@@ -412,6 +411,9 @@ def processing_data_first_prof(path_to_data:str,result_folder:str):
         # создаем папку
         if not os.path.exists(f'{result_folder}/{"Списки по муниципалитетам"}'):
             os.makedirs(f'{result_folder}/{"Списки по муниципалитетам"}')
+
+        df.sort_values(by='Школа',inplace=True)
+        df['Ссылка на сайт'] = 'https://edu-copp03.ru/login/index.php'  # добавляем ссылку на сайт
 
         moodle_df = df.copy() # копируем
         lst_username = [f'fp25_student{idx}' for idx in range(1,len(moodle_df)+1)]
@@ -434,9 +436,7 @@ def processing_data_first_prof(path_to_data:str,result_folder:str):
         for idx, value in enumerate(lst_value_column):
             wb = openpyxl.Workbook()  # создаем файл
             temp_df = moodle_df[moodle_df['Муниципалитет'] == value]  # отфильтровываем по значению
-            temp_df = temp_df[['Школа','Класс','ФИО','Логин','Пароль','Номер телефона законного представителя']]
-            # short_name = value[:40]  # получаем обрезанное значение
-            # short_name = re.sub(r'[\r\b\n\t\'+()<> :"?*|\\/]', '_', short_name)
+            temp_df = temp_df[['Школа','Класс','ФИО','Ссылка на сайт','Логин','Пароль','ФИО законного представителя','Номер телефона законного представителя']]
             for row in dataframe_to_rows(temp_df, index=False, header=True):
                 wb['Sheet'].append(row)
 
@@ -458,6 +458,7 @@ def processing_data_first_prof(path_to_data:str,result_folder:str):
 
 
         # Сохраняем в формате для линди
+        df.drop(columns=['Ссылка на сайт'],inplace=True)
         df = df.rename(columns={'Фамилия обучающегося':'Фамилия','Имя обучающегося':'Имя',
                            'Отчество обучающегося(при наличии)':'Отчество','Дата рождения обучающегося':'Дата_рождения',
                            'Пол обучающегося':'Пол','СНИЛС обучающегося':'СНИЛС',
