@@ -401,7 +401,7 @@ def processing_data_first_prof(path_to_data:str,result_folder:str):
         sum_row = sum_row.rename('Итого').to_frame().transpose()
         quota_df = pd.concat([quota_df,sum_row])
         quota_df.loc['Итого','Муниципалитет'] = 'Итого'
-        quota_df.loc['Итого','% Выполнения квоты'] = ''
+        quota_df.loc['Итого','% Выполнения квоты'] = round((quota_df.loc['Итого','Количество зарегистрировавшихся'] / quota_df.loc['Итого','Квота']) * 100,1)
         with pd.ExcelWriter(f'{result_folder}/Сводка Первая профессия в {current_time}.xlsx') as writer:
             quota_df.to_excel(writer, sheet_name='Свод по квотам',index=False)
             group_by.to_excel(writer, sheet_name='Свод по школам')
