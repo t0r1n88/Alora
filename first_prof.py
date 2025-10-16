@@ -414,7 +414,7 @@ def processing_data_first_prof(path_to_data:str,result_folder:str):
 
         df.sort_values(by='Школа',inplace=True)
         df['Ссылка на телеграм группу обучения'] = 'https://t.me/+Det62FcNZJM1ZDU'
-        df['Ссылка на сайт'] = 'https://edu-copp03.ru/login/index.php'  # добавляем ссылку на сайт
+        df['Ссылка на сайт курса'] = 'https://edu-copp03.ru/login/index.php'  # добавляем ссылку на сайт
 
         moodle_df = df.copy() # копируем
         lst_username = [f'fp25_student{idx}' for idx in range(1,len(moodle_df)+1)]
@@ -437,7 +437,7 @@ def processing_data_first_prof(path_to_data:str,result_folder:str):
         for idx, value in enumerate(lst_value_column):
             wb = openpyxl.Workbook()  # создаем файл
             temp_df = moodle_df[moodle_df['Муниципалитет'] == value]  # отфильтровываем по значению
-            temp_df = temp_df[['Школа','Класс','ФИО','Ссылка на телеграм группу обучения','Ссылка на сайт','Логин','Пароль','ФИО законного представителя','Номер телефона законного представителя']]
+            temp_df = temp_df[['Школа','Класс','ФИО','Ссылка на телеграм группу обучения','Ссылка на сайт курса','Логин','Пароль','ФИО законного представителя','Номер телефона законного представителя']]
             for row in dataframe_to_rows(temp_df, index=False, header=True):
                 wb['Sheet'].append(row)
 
@@ -459,7 +459,7 @@ def processing_data_first_prof(path_to_data:str,result_folder:str):
 
 
         # Сохраняем в формате для линди
-        df.drop(columns=['Ссылка на сайт','Ссылка на телеграм группу обучения'],inplace=True)
+        df.drop(columns=['Ссылка на сайт курса','Ссылка на телеграм группу обучения'],inplace=True)
         df = df.rename(columns={'Фамилия обучающегося':'Фамилия','Имя обучающегося':'Имя',
                            'Отчество обучающегося(при наличии)':'Отчество','Дата рождения обучающегося':'Дата_рождения',
                            'Пол обучающегося':'Пол','СНИЛС обучающегося':'СНИЛС',
