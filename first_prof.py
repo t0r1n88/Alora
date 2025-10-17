@@ -439,7 +439,7 @@ def processing_data_first_prof(path_to_data:str,result_folder:str):
         for idx, value in enumerate(lst_value_column):
             wb = openpyxl.Workbook()  # создаем файл
             temp_df = moodle_df[moodle_df['Муниципалитет'] == value]  # отфильтровываем по значению
-            temp_df = temp_df[['Школа','Класс','ФИО','Ссылка на телеграм группу обучения','Ссылка на сайт курса','Логин','Пароль','ФИО законного представителя','Номер телефона законного представителя']]
+            temp_df = temp_df[['Школа','Класс','ФИО','Ссылка на телеграм группу обучения','Ссылка на сайт курса','Логин','Пароль','Электронная почта законного представителя','ФИО законного представителя','Номер телефона законного представителя']]
             for row in dataframe_to_rows(temp_df, index=False, header=True):
                 wb['Sheet'].append(row)
 
