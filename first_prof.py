@@ -427,7 +427,9 @@ def processing_data_first_prof(path_to_data:str,result_folder:str):
         moodle_df['ФИО'] = moodle_df['Фамилия обучающегося'] + ' ' + moodle_df['Имя обучающегося'] + ' '+ moodle_df['Отчество обучающегося(при наличии)']
 
         # Сохраняем файл для мудл
-        out_moodle_df = moodle_df[['Логин','Пароль','Имя обучающегося','Фамилия обучающегося','email','cohort1']]
+        out_moodle_df = moodle_df[['Логин','Пароль','Имя обучающегося','Фамилия обучающегося','Отчество обучающегося(при наличии)','email','cohort1']].copy()
+        out_moodle_df['Имя обучающегося'] = out_moodle_df['Имя обучающегося'] + ' ' + out_moodle_df['Отчество обучающегося(при наличии)']
+        out_moodle_df.drop(columns=['Отчество обучающегося(при наличии)'],inplace=True)
         out_moodle_df.columns = ['username','password','firstname','lastname','email','cohort1']
         out_moodle_df.to_excel(f'{result_folder}/Файл для MOODLE-{len(out_moodle_df)} строк.xlsx',index=False)
 
