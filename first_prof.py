@@ -414,7 +414,7 @@ def processing_data_first_prof(path_to_data:str,result_folder:str):
 
         df.sort_values(by='Школа',inplace=True)
         df['Ссылка на телеграм группу обучения'] = 'https://t.me/+Zgw_U0s4hCUzMTNi'
-        df['Ссылка на сайт курса'] = 'https://edu-copp03.ru/login/index.php'  # добавляем ссылку на сайт
+        df['Ссылка на сайт курса'] = 'https://edu-copp03.ru'  # добавляем ссылку на сайт
 
         moodle_df = df.copy() # копируем
         lst_username = [f'fp25_student{idx}' for idx in range(1,len(moodle_df)+1)]
