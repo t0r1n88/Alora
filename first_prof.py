@@ -413,7 +413,7 @@ def processing_data_first_prof(path_to_data:str,result_folder:str):
             os.makedirs(f'{result_folder}/{"Списки по муниципалитетам"}')
 
         df.sort_values(by='Школа',inplace=True)
-        df['Ссылка на телеграм группу обучения'] = 'https://t.me/+XOzdv3sGvvA2MjRi'
+        df['Ссылка на телеграм группу обучения'] = 'https://t.me/+Zgw_U0s4hCUzMTNi'
         df['Ссылка на сайт курса'] = 'https://edu-copp03.ru/login/index.php'  # добавляем ссылку на сайт
 
         moodle_df = df.copy() # копируем
