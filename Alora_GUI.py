@@ -179,7 +179,7 @@ def processing_preparation_yandex_first_prof():
 
 if __name__ == '__main__':
     window = Tk()
-    window.title('Алора ver 1.21')
+    window.title('Алора ver 1.22')
     # Устанавливаем размер и положение окна
     set_window_size(window)
     # window.geometry('774x760')
