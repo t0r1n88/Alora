@@ -1,4 +1,5 @@
 from  first_prof import processing_data_first_prof # для обработки файла первой профессии
+from create_svod_first_prof import generate_svod_first_prof # для сводки по приступившим к обучению
 import tkinter
 import sys
 import os
@@ -164,6 +165,37 @@ def select_result_yandex_first_prof_folder():
     path_to_first_prof_end_folder = filedialog.askdirectory()
 
 
+
+def select_data_itog_list_first_prof():
+    """
+    Функция для выбора файла с данными на основе которых будет генерироваться документ
+    :return: Путь к файлу с данными
+    """
+    global data_itog_list
+    # Получаем путь к файлу
+    data_itog_list = filedialog.askopenfilename(filetypes=(('Excel files', '*.xlsx'), ('all files', '*.*')))
+
+def select_data_est_first_prof():
+    """
+    Функция для выбора файла с данными на основе которых будет генерироваться документ
+    :return: Путь к файлу с данными
+    """
+    global data_est_first_prof
+    # Получаем путь к файлу
+    data_est_first_prof = filedialog.askopenfilename(filetypes=(('Excel files', '*.xlsx'), ('all files', '*.*')))
+
+
+
+
+def select_result_svod_folder():
+    """
+    Функция для выбора конечной папки куда будут складываться итоговые файлы
+    :return:
+    """
+    global path_to_end_svod_first_prof
+    path_to_end_svod_first_prof = filedialog.askdirectory()
+
+
 def processing_preparation_yandex_first_prof():
     """
     Функция для генерации документов
@@ -176,10 +208,26 @@ def processing_preparation_yandex_first_prof():
                              f'Выберите файл с данными и папку куда будет генерироваться файл')
 
 
+def processing_create_svod_first_prof():
+    """
+    Функция для генерации документов
+    """
+    try:
+        generate_svod_first_prof(data_itog_list,data_est_first_prof,path_to_end_svod_first_prof)
+
+    except NameError:
+        messagebox.showerror('',
+                             f'Выберите файл с данными и папку куда будет генерироваться файл')
+
+
+
+
+
+
 
 if __name__ == '__main__':
     window = Tk()
-    window.title('Алора ver 1.22')
+    window.title('Алора ver 1.3')
     # Устанавливаем размер и положение окна
     set_window_size(window)
     # window.geometry('774x760')
@@ -245,6 +293,64 @@ if __name__ == '__main__':
                                   font=('Arial Bold', 20),
                                   command=processing_preparation_yandex_first_prof)
     btn_template_process.pack(padx=10, pady=10)
+
+
+    """
+    Создаем вкладку для создания Сводов
+    """
+    tab_svod_first_prof = ttk.Frame(tab_control)
+    tab_control.add(tab_svod_first_prof, text='Сводка\nПервая профессия')
+
+    svod_first_prof_frame_description = LabelFrame(tab_svod_first_prof)
+    svod_first_prof_frame_description.pack()
+
+    lbl_hello_svod_first_prof = Label(svod_first_prof_frame_description,
+                                      text='Центр опережающей профессиональной подготовки Республики Бурятия', width=60)
+    lbl_hello_svod_first_prof.pack(side=LEFT, anchor=N, ipadx=25, ipady=10)
+
+    # Картинка
+    path_to_img_svod_first_prof = resource_path('logo.png')
+    img_svod_first_prof = PhotoImage(file=path_to_img_svod_first_prof)
+    Label(svod_first_prof_frame_description,
+          image=img_svod_first_prof, padx=10, pady=10
+          ).pack(side=LEFT, anchor=E, ipadx=5, ipady=5)
+
+    # Создаем область для того чтобы поместить туда подготовительные кнопки(выбрать файл,выбрать папку и т.п.)
+    frame_data_svod_first_prof = LabelFrame(tab_svod_first_prof, text='Подготовка')
+    frame_data_svod_first_prof.pack(padx=10, pady=10)
+
+    # Создаем кнопку Выбрать файл
+
+    btn_svod_itog_list_first_prof = Button(frame_data_svod_first_prof, text='1) Выберите итоговый список',
+                                       font=('Arial Bold', 14),
+                                       command=select_data_itog_list_first_prof)
+    btn_svod_itog_list_first_prof.pack(padx=10, pady=10)
+
+    btn_svod_est_first_prof = Button(frame_data_svod_first_prof, text='2) Выберите файл с оценками',
+                                       font=('Arial Bold', 14),
+                                       command=select_data_est_first_prof)
+    btn_svod_est_first_prof.pack(padx=10, pady=10)
+
+
+    btn_svod_first_prof_choose_end_folder = Button(frame_data_svod_first_prof, text='3) Выберите конечную папку',
+                                                   font=('Arial Bold', 14),
+                                                   command=select_result_svod_folder
+                                                   )
+    btn_svod_first_prof_choose_end_folder.pack(padx=10, pady=10)
+
+    # Создаем кнопку слияния
+
+    btn_svod_first_prof_process = Button(tab_svod_first_prof, text='4) Выполнить обработку',
+                                         font=('Arial Bold', 20),
+                                         command=processing_create_svod_first_prof)
+    btn_svod_first_prof_process.pack(padx=10, pady=10)
+
+
+
+
+
+
+
 
 
 
