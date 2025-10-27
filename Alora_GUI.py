@@ -185,6 +185,16 @@ def select_data_est_first_prof():
     data_est_first_prof = filedialog.askopenfilename(filetypes=(('Excel files', '*.xlsx'), ('all files', '*.*')))
 
 
+def select_data_moodle_first_prof():
+    """
+    Функция для выбора файла с данными на основе которых будет генерироваться документ
+    :return: Путь к файлу с данными
+    """
+    global data_moodle_first_prof
+    # Получаем путь к файлу
+    data_moodle_first_prof = filedialog.askopenfilename(filetypes=(('Excel files', '*.xlsx'), ('all files', '*.*')))
+
+
 
 
 def select_result_svod_folder():
@@ -213,7 +223,7 @@ def processing_create_svod_first_prof():
     Функция для генерации документов
     """
     try:
-        generate_svod_first_prof(data_itog_list,data_est_first_prof,path_to_end_svod_first_prof)
+        generate_svod_first_prof(data_itog_list,data_est_first_prof,data_moodle_first_prof,path_to_end_svod_first_prof)
 
     except NameError:
         messagebox.showerror('',
@@ -331,8 +341,14 @@ if __name__ == '__main__':
                                        command=select_data_est_first_prof)
     btn_svod_est_first_prof.pack(padx=10, pady=10)
 
+    btn_svod_moodle_first_prof = Button(frame_data_svod_first_prof, text='3) Выберите файл с логинами Moodle',
+                                       font=('Arial Bold', 14),
+                                       command=select_data_moodle_first_prof)
+    btn_svod_moodle_first_prof.pack(padx=10, pady=10)
 
-    btn_svod_first_prof_choose_end_folder = Button(frame_data_svod_first_prof, text='3) Выберите конечную папку',
+
+
+    btn_svod_first_prof_choose_end_folder = Button(frame_data_svod_first_prof, text='4) Выберите конечную папку',
                                                    font=('Arial Bold', 14),
                                                    command=select_result_svod_folder
                                                    )
@@ -340,7 +356,7 @@ if __name__ == '__main__':
 
     # Создаем кнопку слияния
 
-    btn_svod_first_prof_process = Button(tab_svod_first_prof, text='4) Выполнить обработку',
+    btn_svod_first_prof_process = Button(tab_svod_first_prof, text='5) Выполнить обработку',
                                          font=('Arial Bold', 20),
                                          command=processing_create_svod_first_prof)
     btn_svod_first_prof_process.pack(padx=10, pady=10)

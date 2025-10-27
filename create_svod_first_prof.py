@@ -24,11 +24,12 @@ def convert_to_none(cell):
     else:
         return cell
 
-def generate_svod_first_prof(list_student:str,estimation_file:str,result_folder:str):
+def generate_svod_first_prof(list_student:str,estimation_file:str,lst_moodle:str,result_folder:str):
     """
     Функция для создания свод по прошедшим обучение.
     :param list_student: итоговый список школьников
     :param estimation_file: файл с оценками
+    :param lst_moodle: файл логинами мудл
     :param result_folder: конечная папка
     :return:
     """
@@ -49,7 +50,18 @@ def generate_svod_first_prof(list_student:str,estimation_file:str,result_folder:
         df = pd.merge(df,est_df,how='outer',left_on='ФИО',right_on='ФИО')
 
         not_start_df = df[df['Тест:Тест 1.1. Речевая и логическая культура ведения делового разговора (Значение)'].isna()]
-        not_start_df = not_start_df[['Муниципалитет','Школа','Класс','ФИО',]]
+        not_start_df = not_start_df[['Школа','Класс','ФИО_представителя','Номер_телефона','Электронная_почта','ФИО','Муниципалитет']]
+
+        # Соединяем с файлом мудла
+        moodle_df = pd.read_excel(lst_moodle,dtype=str)
+        moodle_df['ФИО'] = moodle_df['lastname'] + ' ' + moodle_df['firstname']
+
+        not_start_df = pd.merge(not_start_df,moodle_df,how='inner',left_on='ФИО',right_on='ФИО')
+        not_start_df.drop(columns=['firstname','lastname','email','cohort1'],inplace=True)
+        not_start_df.rename(columns={'ФИО':'ФИО школьника','username':'Логин для edu-copp03.ru','password':'Пароль для edu-copp03.ru'},inplace=True)
+        not_start_df['Телеграм курса'] = 'https://t.me/+Zgw_U0s4hCUzMTNi'
+        not_start_df=not_start_df.reindex(columns=['ФИО_представителя','Номер_телефона','Электронная_почта','ФИО школьника','Логин для edu-copp03.ru','Пароль для edu-copp03.ru','Телеграм курса',
+                                      'Муниципалитет','Школа','Класс'])
 
         # Сохраняем списки по муниципалитетам
         lst_value_column = not_start_df['Муниципалитет'].unique()
@@ -57,7 +69,7 @@ def generate_svod_first_prof(list_student:str,estimation_file:str,result_folder:
         for idx, value in enumerate(lst_value_column):
             wb = openpyxl.Workbook()  # создаем файл
             temp_df = not_start_df[not_start_df['Муниципалитет'] == value]  # отфильтровываем по значению
-            temp_df = temp_df[['Школа','Класс','ФИО']]
+            # temp_df = temp_df[['Школа','Класс','ФИО школьника']]
             for row in dataframe_to_rows(temp_df, index=False, header=True):
                 wb['Sheet'].append(row)
 
@@ -109,8 +121,9 @@ def generate_svod_first_prof(list_student:str,estimation_file:str,result_folder:
 if __name__ == '__main__':
     main_list_student = 'data/ИТОГОВЫЙ список зарегистрировавшихся на курс.xlsx'
     main_estimation_file = 'data/Цифровой куратор Оценки.xlsx'
+    main_lst_moodle = 'data/Файл для MOODLE 27_10.xlsx'
     main_result_folder = 'data/Результат'
 
-    generate_svod_first_prof(main_list_student,main_estimation_file,main_result_folder)
+    generate_svod_first_prof(main_list_student,main_estimation_file,main_lst_moodle,main_result_folder)
 
     print('Lindy Booth')
