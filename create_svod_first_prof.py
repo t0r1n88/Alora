@@ -5,6 +5,9 @@
 import pandas as pd
 import time
 from tkinter import messagebox
+import openpyxl
+from openpyxl.utils.dataframe import dataframe_to_rows
+from openpyxl.utils import get_column_letter
 
 
 def convert_to_none(cell):
@@ -45,21 +48,51 @@ def generate_svod_first_prof(list_student:str,estimation_file:str,result_folder:
 
         df = pd.merge(df,est_df,how='outer',left_on='ФИО',right_on='ФИО')
 
+        not_start_df = df[df['Тест:Тест 1.1. Речевая и логическая культура ведения делового разговора (Значение)'].isna()]
+        not_start_df = not_start_df[['Муниципалитет','Школа','Класс','ФИО',]]
+
+        # Сохраняем списки по муниципалитетам
+        lst_value_column = not_start_df['Муниципалитет'].unique()
+
+        for idx, value in enumerate(lst_value_column):
+            wb = openpyxl.Workbook()  # создаем файл
+            temp_df = not_start_df[not_start_df['Муниципалитет'] == value]  # отфильтровываем по значению
+            temp_df = temp_df[['Школа','Класс','ФИО']]
+            for row in dataframe_to_rows(temp_df, index=False, header=True):
+                wb['Sheet'].append(row)
+
+            # Устанавливаем автоширину для каждой колонки
+            for column in wb['Sheet'].columns:
+                max_length = 0
+                column_name = get_column_letter(column[0].column)
+                for cell in column:
+                    try:
+                        if len(str(cell.value)) > max_length:
+                            max_length = len(cell.value)
+                    except:
+                        pass
+                adjusted_width = (max_length + 2)
+                wb['Sheet'].column_dimensions[column_name].width = adjusted_width
+
+            wb.save(f'{result_folder}/{value} учеников-{len(temp_df)}.xlsx')
+            wb.close()
+
+
 
 
         group_df = df.groupby(['Муниципалитет']).agg({'Тест:Тест 1.1. Речевая и логическая культура ведения делового разговора (Значение)':'count'}).fillna(0)
-        group_df.rename(columns={'Тест:Тест 1.1. Речевая и логическая культура ведения делового разговора (Значение)':'Количество начавших обучение'},inplace=True)
+        group_df.rename(columns={'Тест:Тест 1.1. Речевая и логическая культура ведения делового разговора (Значение)':'Количество приступивших к обучению'},inplace=True)
         # Добавляем колонку с количеством зарегистрировавшихся
-        group_df.insert(0,'Записано на курс',[6,7,13,10,7,23,32,23,21,8,30,23,34,10,10,31,8,4,39])
+        group_df.insert(0,'Записано на курс',[6,7,12,10,7,23,32,22,20,8,30,23,34,10,10,31,8,4,38])
 
-        group_df['% начавших обучение'] = round((group_df['Количество начавших обучение'] / group_df['Записано на курс']) * 100,1)
-        group_df['Количество не начавших обучение'] = group_df['Записано на курс'] - group_df['Количество начавших обучение']
+        group_df['% приступивших к обучению'] = round((group_df['Количество приступивших к обучению'] / group_df['Записано на курс']) * 100,1)
+        group_df['Количество НЕ приступивших к обучению'] = group_df['Записано на курс'] - group_df['Количество приступивших к обучению']
 
         sum_row = group_df.sum(axis=0, numeric_only=True)
         sum_row = sum_row.rename('Итого').to_frame().transpose()
         group_df = pd.concat([group_df, sum_row])
-        group_df.loc['Итого', '% начавших обучение'] = round(
-            (group_df.loc['Итого', 'Количество начавших обучение'] / group_df.loc['Итого', 'Записано на курс']) * 100, 1)
+        group_df.loc['Итого', '% приступивших к обучению'] = round(
+            (group_df.loc['Итого', 'Количество приступивших к обучению'] / group_df.loc['Итого', 'Записано на курс']) * 100, 1)
         with pd.ExcelWriter(f'{result_folder}/Сводка Первая профессия в {current_time}.xlsx') as writer:
             group_df.to_excel(writer, sheet_name='Свод по муниципалитетам', index=True)
     except PermissionError as e:
@@ -69,10 +102,6 @@ def generate_svod_first_prof(list_student:str,estimation_file:str,result_folder:
         messagebox.showerror('Алора',
                              f'Не удалось создать файл с названием {e}\n'
                              f'Уменьшите количество символов в соответствующей строке или выберите более короткий путь к итоговой папке')
-    except PackageNotFoundError as e:
-        messagebox.showerror('Алора',
-                             f'Не удалось создать файл с названием {e}\n'
-                             f'Уменьшите количество символов в соответствующей строке файла с данными в колонке по которой создаются имена файлов или выберите более короткий путь к итоговой папке')
     else:
         messagebox.showinfo('Алора', 'Создание документов успешно завершено !')
 
