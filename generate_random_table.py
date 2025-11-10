@@ -6,11 +6,11 @@ import random
 
 #
 # # Заданное количество строк и столбцов
-rows = 101
-cols = 24
+rows = 51
+cols = 1
 #
 # # Список значений для выбора
-value_list = ['очень на меня не похоже','скорее не похоже на меня, чем похоже','нечто среднее','скорее похоже на меня, чем нет','очень на меня похоже']
+value_list = ['5а','5б','6а','6б','6в']
 
 # Генерация DataFrame
 df = pd.DataFrame([[random.choice(value_list) for _ in range(cols)] for _ in range(rows)],
