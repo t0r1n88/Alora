@@ -237,7 +237,7 @@ def processing_create_svod_first_prof():
 
 if __name__ == '__main__':
     window = Tk()
-    window.title('Алора ver 1.4')
+    window.title('Алора ver 1.5')
     # Устанавливаем размер и положение окна
     set_window_size(window)
     # window.geometry('774x760')
