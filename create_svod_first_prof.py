@@ -135,7 +135,7 @@ def generate_svod_first_prof(list_student:str,estimation_file:str,lst_moodle:str
         df['ФИО'] = df['Фамилия'] + ' ' + df['Имя'] + ' '+ df['Отчество']
         est_df['ФИО'] = est_df['Фамилия'] + ' ' + est_df['Имя']
 
-        df = pd.merge(df,est_df,how='outer',left_on='ФИО',right_on='ФИО')
+        df = pd.merge(df,est_df,how='inner',left_on='ФИО',right_on='ФИО')
 
         not_start_df = df[df['Тест:Тест 1.1. Речевая и логическая культура ведения делового разговора (Значение)'].isna()]
         not_start_df = not_start_df[['Школа','Класс','ФИО_представителя','Номер_телефона','Электронная_почта','ФИО','Муниципалитет']]
