@@ -126,7 +126,9 @@ def generate_svod_first_prof(list_student:str,estimation_file:str,lst_moodle:str
         t = time.localtime()
         current_time = time.strftime('%H_%M на %d.%m', t)
         df = pd.read_excel(list_student,dtype=str) # файл с данными школьников
+        df = df.applymap(lambda x:x.strip() if isinstance(x,str) else x)
         est_df = pd.read_excel(estimation_file)
+        est_df = est_df.applymap(lambda x: x.strip() if isinstance(x, str) else x)
         est_df.drop(columns=['Индивидуальный номер','Учреждение (организация)','Отдел','Адрес электронной почты','Последние загруженные из этого курса'],inplace=True)
 
         est_df = est_df.applymap(convert_to_none)
@@ -143,6 +145,7 @@ def generate_svod_first_prof(list_student:str,estimation_file:str,lst_moodle:str
         # Соединяем с файлом мудла
         moodle_df = pd.read_excel(lst_moodle,dtype=str)
         moodle_df['ФИО'] = moodle_df['lastname'] + ' ' + moodle_df['firstname']
+
 
         not_start_df = pd.merge(not_start_df,moodle_df,how='inner',left_on='ФИО',right_on='ФИО')
         not_start_df.drop(columns=['firstname','lastname','email','cohort1'],inplace=True)
@@ -261,8 +264,8 @@ def generate_svod_first_prof(list_student:str,estimation_file:str,lst_moodle:str
 
 if __name__ == '__main__':
     main_list_student = 'data/ИТОГОВЫЙ список зарегистрировавшихся на курс.xlsx'
-    main_estimation_file = 'data/Цифровой куратор Оценки.xlsx'
-    main_lst_moodle = 'data/Файл для MOODLE 27_10.xlsx'
+    main_estimation_file = 'data/Цифровой куратор Оценки (29).xlsx'
+    main_lst_moodle = 'data/Файл для MOODLE 26_11.xlsx'
     main_result_folder = 'data/Результат'
 
     generate_svod_first_prof(main_list_student,main_estimation_file,main_lst_moodle,main_result_folder)
