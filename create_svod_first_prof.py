@@ -142,6 +142,10 @@ def generate_svod_first_prof(list_student:str,estimation_file:str,lst_moodle:str
         not_start_df = df[df['Тест:Тест 1.1. Речевая и логическая культура ведения делового разговора (Значение)'].isna()]
         not_start_df = not_start_df[['Школа','Класс','ФИО_представителя','Номер_телефона','Электронная_почта','ФИО','Муниципалитет']]
 
+        start_df = df[df['Тест:Тест 1.1. Речевая и логическая культура ведения делового разговора (Значение)'].notna()]
+
+        start_df.to_excel(f'{result_folder}/Приступившие к обучению- {len(start_df)}.xlsx')
+
         # Соединяем с файлом мудла
         moodle_df = pd.read_excel(lst_moodle,dtype=str)
         moodle_df['ФИО'] = moodle_df['lastname'] + ' ' + moodle_df['firstname']
@@ -263,9 +267,9 @@ def generate_svod_first_prof(list_student:str,estimation_file:str,lst_moodle:str
 
 
 if __name__ == '__main__':
-    main_list_student = 'data/ИТОГОВЫЙ список зарегистрировавшихся на курс.xlsx'
-    main_estimation_file = 'data/Цифровой куратор Оценки (29).xlsx'
-    main_lst_moodle = 'data/Файл для MOODLE 26_11.xlsx'
+    main_list_student = 'data/ИТОГОВЫЙ список зарегистрировавшихся на курс 10 декабря.xlsx'
+    main_estimation_file = 'data/Цифровой куратор Оценки (37).xlsx'
+    main_lst_moodle = 'data/Файл для MOODLE 02_12.xlsx'
     main_result_folder = 'data/Результат'
 
     generate_svod_first_prof(main_list_student,main_estimation_file,main_lst_moodle,main_result_folder)
