@@ -1,9 +1,11 @@
 """
 Функции  для нахождения разницы двух таблиц
 """
-from support_functions import write_df_to_excel # импорт функции по записи в файл с автошириной колонок
 import pandas as pd
-from tkinter import filedialog
+import openpyxl
+from openpyxl.utils.dataframe import dataframe_to_rows
+from openpyxl.utils import get_column_letter
+from openpyxl.styles import Font, PatternFill
 from tkinter import messagebox
 import time
 import warnings
@@ -37,33 +39,44 @@ class ColumnsDifference(Exception):
     pass
 
 
-def select_first_diffrence():
+def write_df_to_excel(dct_df:dict,write_index:bool)->openpyxl.Workbook:
     """
-    Функция для файла с данными
-    :return: Путь к файлу с данными
+    Функция для записи датафрейма в файл Excel
+    :param dct_df: словарь где ключе это название создаваемого листа а значение датафрейм который нужно записать
+    :param write_index: нужно ли записывать индекс датафрейма True or False
+    :return: объект Workbook с записанными датафреймами
     """
-    global data_first_diffrence
-    # Получаем путь к файлу
-    data_first_diffrence = filedialog.askopenfilename(filetypes=(('Excel files', '*.xlsx'), ('all files', '*.*')))
+    wb = openpyxl.Workbook() # создаем файл
+    count_index = 0 # счетчик индексов создаваемых листов
+    for name_sheet,df in dct_df.items():
+        wb.create_sheet(title=name_sheet,index=count_index) # создаем лист
+        # записываем данные в лист
+        if len(df) == 0:
+            continue
+        for row in dataframe_to_rows(df,index=write_index,header=True):
+            wb[name_sheet].append(row)
+        # ширина по содержимому
+        # сохраняем по ширине колонок
+        for column in wb[name_sheet].columns:
+            max_length = 0
+            column_name = get_column_letter(column[0].column)
+            for cell in column:
+                try:
+                    if len(str(cell.value)) > max_length:
+                        max_length = len(cell.value)
+                except:
+                    pass
+            adjusted_width = (max_length + 2)
+            wb[name_sheet].column_dimensions[column_name].width = adjusted_width
+        count_index += 1
+    # удаляем лишний лист
+    if len(wb.sheetnames) >= 2 and 'Sheet' in wb.sheetnames:
+        del wb['Sheet']
+    return wb
 
 
-def select_second_diffrence():
-    """
-    Функция для файла с данными
-    :return: Путь к файлу с данными
-    """
-    global data_second_diffrence
-    # Получаем путь к файлу
-    data_second_diffrence = filedialog.askopenfilename(filetypes=(('Excel files', '*.xlsx'), ('all files', '*.*')))
 
 
-def select_end_folder_diffrence():
-    """
-    Функия для выбора папки.Определенно вот это когда нибудь я перепишу на ООП
-    :return:
-    """
-    global path_to_end_folder_diffrence
-    path_to_end_folder_diffrence = filedialog.askdirectory()
 
 
 def abs_diff(first_value, second_value):
@@ -119,11 +132,11 @@ def find_diffrence(first_sheet, second_sheet, first_df, second_df,path_to_end_fo
             df1 = pd.read_excel(first_df, sheet_name=first_sheet, dtype=str)
             df2 = pd.read_excel(second_df, sheet_name=second_sheet, dtype=str)
         except ValueError:
-            messagebox.showerror('Веста Обработка таблиц и создание документов',
+            messagebox.showerror('Алора',
                                  f'В файлах нет листа с таким названием!\n'
                                  f'Проверьте написание названия листа')
         except:
-            messagebox.showerror('Веста Обработка таблиц и создание документов',
+            messagebox.showerror('Алора',
                                  f'Не удалось обработать файлы . Возможно какой то из файлов используемых для сравнения поврежден')
 
         # проверяем на соответсвие размеров
@@ -188,32 +201,32 @@ def find_diffrence(first_sheet, second_sheet, first_df, second_df,path_to_end_fo
     except UnboundLocalError:
         pass
     except ShapeDiffierence:
-        messagebox.showerror('Веста Обработка таблиц и создание документов',
+        messagebox.showerror('Алора',
                              f'Не совпадают размеры таблиц, В первой таблице {df1.shape[0]}-стр. и {df1.shape[1]}-кол.\n'
                              f'Во второй таблице {df2.shape[0]}-стр. и {df2.shape[1]}-кол.')
 
     except ColumnsDifference:
-        messagebox.showerror('Веста Обработка таблиц и создание документов',
+        messagebox.showerror('Алора',
                              f'Названия колонок в сравниваемых таблицах отличаются\n'
                              f'Колонок:{diff_columns}  нет во второй таблице !!!\n'
                              f'Сделайте названия колонок одинаковыми.')
 
     except ValueError:
-        messagebox.showerror('Веста Обработка таблиц и создание документов',
+        messagebox.showerror('Алора',
                              f'В файлах нет листа с таким названием!\n'
                              f'Проверьте написание названия листа')
         logging.exception('AN ERROR HAS OCCURRED')
     except FileNotFoundError:
-        messagebox.showerror('Веста Обработка таблиц и создание документов',
+        messagebox.showerror('Алора',
                              f'Перенесите файлы, конечную папку с которой вы работете в корень диска. Проблема может быть\n '
                              f'в слишком длинном пути к обрабатываемым файлам или конечной папке.')
 
-    # except:
-    #     logging.exception('AN ERROR HAS OCCURRED')
-    #     messagebox.showerror('Веста Обработка таблиц и создание документов',
-    #                          'Возникла ошибка!!! Подробности ошибки в файле error.log Возможно обрабатываемые файлы повреждены.')
+    except:
+        logging.exception('AN ERROR HAS OCCURRED')
+        messagebox.showerror('Алора',
+                             'Возникла ошибка!!! Подробности ошибки в файле error.log Возможно обрабатываемые файлы повреждены.')
     else:
-        messagebox.showinfo('Веста Обработка таблиц и создание документов', 'Таблицы успешно обработаны')
+        messagebox.showinfo('Алора', 'Таблицы успешно обработаны')
 
 if __name__ == '__main__':
     first_sheet_main = 'Основное'

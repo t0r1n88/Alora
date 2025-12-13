@@ -1,6 +1,7 @@
 from  first_prof import processing_data_first_prof # для обработки файла первой профессии
 from create_svod_first_prof import generate_svod_first_prof # для сводки по приступившим к обучению
 from bvb_events_rmg import create_svod_bvb # для обработки данных билета в будущее
+from alora_diff_tables import find_diffrence # функция для нахождения разницы между двумя таблицами
 import tkinter
 import sys
 import os
@@ -276,6 +277,61 @@ def processing_create_svod_bvb():
 
 
 
+"""
+Нахождения разницы 2 таблиц
+Функции  получения параметров для find_diffrenece 
+"""
+
+
+def select_first_diffrence():
+    """
+    Функция для файла с данными
+    :return: Путь к файлу с данными
+    """
+    global data_first_diffrence
+    # Получаем путь к файлу
+    data_first_diffrence = filedialog.askopenfilename(filetypes=(('Excel files', '*.xlsx'),('Excel files', '*.xlsm'), ('all files', '*.*')))
+
+
+def select_second_diffrence():
+    """
+    Функция для файла с данными
+    :return: Путь к файлу с данными
+    """
+    global data_second_diffrence
+    # Получаем путь к файлу
+    data_second_diffrence = filedialog.askopenfilename(filetypes=(('Excel files', '*.xlsx'),('Excel files', '*.xlsm'), ('all files', '*.*')))
+
+
+def select_end_folder_diffrence():
+    """
+    Функия для выбора папки.Определенно вот это когда нибудь я перепишу на ООП
+    :return:
+    """
+    global path_to_end_folder_diffrence
+    path_to_end_folder_diffrence = filedialog.askdirectory()
+
+
+def processing_diffrence():
+    """
+    Функция для получения названий листов и путей к файлам которые нужно сравнить
+    :return:
+    """
+    # названия листов в таблицах
+    try:
+        first_sheet = entry_first_sheet_name_diffrence.get()
+        second_sheet = entry_second_sheet_name_diffrence.get()
+        # находим разницу
+        find_diffrence(first_sheet, second_sheet, data_first_diffrence, data_second_diffrence,
+                       path_to_end_folder_diffrence)
+    except NameError:
+        messagebox.showerror('Алора',
+                             f'Выберите файлы с данными и папку куда будет генерироваться файл')
+
+
+
+
+
 
 
 if __name__ == '__main__':
@@ -353,6 +409,89 @@ if __name__ == '__main__':
                              font=('Arial Bold', 20),
                              command=processing_create_svod_bvb)
     btn_bvb_process.pack(padx=10, pady=10)
+
+
+    """
+    Разница двух таблиц
+    """
+    tab_diffrence = Frame(tab_control)
+    tab_control.add(tab_diffrence, text='Разница 2 таблиц')
+
+    diffrence_frame_description = LabelFrame(tab_diffrence)
+    diffrence_frame_description.pack()
+
+    lbl_hello_diffrence = Label(diffrence_frame_description,
+                                text='Поиск отличий в двух таблицах\n'
+                                     'ВАЖНО Количество строк и колонок в таблицах должно совпадать\n'
+                                     'ВАЖНО Названия колонок в таблицах должны совпадать\n'
+                                     'ПРИМЕЧАНИЯ\n'
+                                     'Заголовок таблицы должен занимать только первую строку!\n'
+                                     'Для корректной работы программы уберите из таблицы\n объединенные ячейки',
+                                width=60)
+
+    lbl_hello_diffrence.pack(side=LEFT, anchor=N, ipadx=25, ipady=10)
+    # Картинка
+    path_to_img_diffrence = resource_path('logo.png')
+    img_diffrence = PhotoImage(file=path_to_img_diffrence)
+    Label(diffrence_frame_description,
+          image=img_diffrence, padx=10, pady=10
+          ).pack(side=LEFT, anchor=E, ipadx=5, ipady=5)
+
+    # Создаем область для того чтобы поместить туда подготовительные кнопки(выбрать файл,выбрать папку и т.п.)
+    frame_data_diffrence = LabelFrame(tab_diffrence, text='Подготовка')
+    frame_data_diffrence.pack(padx=10, pady=10)
+
+    # Создаем кнопку Выбрать  первый файл с данными
+    btn_data_first_diffrence = Button(frame_data_diffrence, text='1) Выберите файл с первой таблицей',
+                                      font=('Arial Bold', 14),
+                                      command=select_first_diffrence
+                                      )
+    btn_data_first_diffrence.pack(padx=10, pady=10)
+
+    # Определяем текстовую переменную
+    entry_first_sheet_name_diffrence = StringVar()
+    # Описание поля
+    label_first_sheet_name_diffrence = Label(frame_data_diffrence,
+                                             text='2) Введите название листа, где находится первая таблица')
+    label_first_sheet_name_diffrence.pack(padx=10, pady=10)
+    # поле ввода имени листа
+    first_sheet_name_entry_diffrence = Entry(frame_data_diffrence, textvariable=entry_first_sheet_name_diffrence,
+                                             width=30)
+    first_sheet_name_entry_diffrence.pack(ipady=5)
+
+    # Создаем кнопку Выбрать  второй файл с данными
+    btn_data_second_diffrence = Button(frame_data_diffrence, text='3) Выберите файл со второй таблицей',
+                                       font=('Arial Bold', 14),
+                                       command=select_second_diffrence
+                                       )
+    btn_data_second_diffrence.pack(padx=10, pady=10)
+
+    # Определяем текстовую переменную
+    entry_second_sheet_name_diffrence = StringVar()
+    # Описание поля
+    label_second_sheet_name_diffrence = Label(frame_data_diffrence,
+                                              text='4) Введите название листа, где находится вторая таблица')
+    label_second_sheet_name_diffrence.pack(padx=10, pady=10)
+    # поле ввода
+    second__sheet_name_entry_diffrence = Entry(frame_data_diffrence, textvariable=entry_second_sheet_name_diffrence,
+                                               width=30)
+    second__sheet_name_entry_diffrence.pack(ipady=5)
+
+    # Создаем кнопку выбора папки куда будет генерироваьться файл
+    btn_select_end_diffrence = Button(frame_data_diffrence, text='5) Выберите конечную папку',
+                                      font=('Arial Bold', 14),
+                                      command=select_end_folder_diffrence
+                                      )
+    btn_select_end_diffrence.pack(padx=10, pady=10)
+
+    # Создаем кнопку Обработать данные
+    btn_data_do_diffrence = Button(tab_diffrence, text='6) Обработать таблицы', font=('Arial Bold', 20),
+                                   command=processing_diffrence
+                                   )
+    btn_data_do_diffrence.pack(padx=10, pady=10)
+
+
+
 
 
 
