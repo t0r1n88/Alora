@@ -1,5 +1,6 @@
 from  first_prof import processing_data_first_prof # для обработки файла первой профессии
 from create_svod_first_prof import generate_svod_first_prof # для сводки по приступившим к обучению
+from bvb_events_rmg import create_svod_bvb # для обработки данных билета в будущее
 import tkinter
 import sys
 import os
@@ -231,13 +232,55 @@ def processing_create_svod_first_prof():
 
 
 
+"""
+Функции для обработки данных билета в будущее
+"""
+
+def select_data_rmg():
+    """
+    Функция для выбора файла с данными на основе которых будет генерироваться документ
+    :return: Путь к файлу с данными
+    """
+    global data_rmg
+    # Получаем путь к файлу
+    data_rmg = filedialog.askopenfilename(filetypes=(('Excel files', '*.xlsx'), ('all files', '*.*')))
+
+def select_data_bvb():
+    """
+    Функция для выбора файла с данными на основе которых будет генерироваться документ
+    :return: Путь к файлу с данными
+    """
+    global data_bvb
+    # Получаем путь к файлу
+    data_bvb = filedialog.askopenfilename(filetypes=(('Excel files', '*.xlsx'), ('all files', '*.*')))
+
+
+def select_end_folder_bvb():
+    """
+    Функция для выбора конечной папки куда будут складываться итоговые файлы
+    :return:
+    """
+    global path_to_end_bvb
+    path_to_end_bvb = filedialog.askdirectory()
+
+def processing_create_svod_bvb():
+    """
+    Функция для генерации документов
+    """
+    try:
+        create_svod_bvb(data_bvb,data_rmg,path_to_end_bvb)
+
+    except NameError:
+        messagebox.showerror('',
+                             f'Выберите файл с данными и папку куда будет генерироваться файл')
+
 
 
 
 
 if __name__ == '__main__':
     window = Tk()
-    window.title('Алора ver 1.5')
+    window.title('Алора ver 1.0')
     # Устанавливаем размер и положение окна
     set_window_size(window)
     # window.geometry('774x760')
@@ -260,107 +303,161 @@ if __name__ == '__main__':
     tab_control = ttk.Notebook(canvas)
 
     """
-    Создаем вкладку 
+    Создаем вкладку для обработки данных билета в будущее
     """
-    tab_template = ttk.Frame(tab_control)
-    tab_control.add(tab_template, text='Подготовка данных\nПервая профессия')
 
-    template_frame_description = LabelFrame(tab_template)
-    template_frame_description.pack()
+    tab_bvb = ttk.Frame(tab_control)
+    tab_control.add(tab_bvb, text='Создание сводов Билет в будущее')
 
-    lbl_hello_template = Label(template_frame_description,
-                                   text='Центр опережающей профессиональной подготовки Республики Бурятия', width=60)
-    lbl_hello_template.pack(side=LEFT, anchor=N, ipadx=25, ipady=10)
+    bvb_frame_description = LabelFrame(tab_bvb)
+    bvb_frame_description.pack()
+
+    lbl_hello_bvb = Label(bvb_frame_description,
+                          text='Центр опережающей профессиональной подготовки Республики Бурятия\n'
+                               'Для работы требуются 2 файла скачанных с сайта Билета в будущее:\n'
+                               '1) Отчет по форме Минпросвещения\n'
+                               '2) Сводный отчет по ученикам', width=60)
+    lbl_hello_bvb.pack(side=LEFT, anchor=N, ipadx=25, ipady=10)
 
     # Картинка
-    path_to_img_template = resource_path('logo.png')
-    img_template = PhotoImage(file=path_to_img_template)
-    Label(template_frame_description,
-          image=img_template, padx=10, pady=10
+    path_to_img_bvb = resource_path('logo.png')
+    img_bvb = PhotoImage(file=path_to_img_bvb)
+    Label(bvb_frame_description,
+          image=img_bvb, padx=10, pady=10
           ).pack(side=LEFT, anchor=E, ipadx=5, ipady=5)
 
     # Создаем область для того чтобы поместить туда подготовительные кнопки(выбрать файл,выбрать папку и т.п.)
-    frame_data_template = LabelFrame(tab_template, text='Подготовка')
-    frame_data_template.pack(padx=10, pady=10)
+    frame_data_bvb = LabelFrame(tab_bvb, text='Подготовка')
+    frame_data_bvb.pack(padx=10, pady=10)
 
     # Создаем кнопку Выбрать файл
 
-    btn_template_first = Button(frame_data_template, text='1) Выберите файл Яндекс формы', font=('Arial Bold', 14),
-                                command=select_data_yandex_first_prof)
-    btn_template_first.pack(padx=10, pady=10)
+    btn_bvb_rmg = Button(frame_data_bvb, text='1) Выберите отчет по форме Минпросвещения', font=('Arial Bold', 14),
+                           command=select_data_rmg)
+    btn_bvb_rmg.pack(padx=10, pady=10)
+
+    btn_bvb_students = Button(frame_data_bvb, text='2) Выберите сводный отчет по ученикам', font=('Arial Bold', 14),
+                           command=select_data_bvb)
+    btn_bvb_students.pack(padx=10, pady=10)
 
 
-
-    btn_template_choose_end_folder = Button(frame_data_template, text='2) Выберите конечную папку',
-                                            font=('Arial Bold', 14),
-                                            command=select_result_yandex_first_prof_folder
-                                            )
-    btn_template_choose_end_folder.pack(padx=10, pady=10)
+    btn_bvb_choose_end_folder = Button(frame_data_bvb, text='3) Выберите конечную папку',
+                                       font=('Arial Bold', 14),
+                                       command=select_end_folder_bvb
+                                       )
+    btn_bvb_choose_end_folder.pack(padx=10, pady=10)
 
     # Создаем кнопку слияния
 
-    btn_template_process = Button(tab_template, text='3) Выполнить обработку',
-                                  font=('Arial Bold', 20),
-                                  command=processing_preparation_yandex_first_prof)
-    btn_template_process.pack(padx=10, pady=10)
-
-
-    """
-    Создаем вкладку для создания Сводов
-    """
-    tab_svod_first_prof = ttk.Frame(tab_control)
-    tab_control.add(tab_svod_first_prof, text='Сводка\nПервая профессия')
-
-    svod_first_prof_frame_description = LabelFrame(tab_svod_first_prof)
-    svod_first_prof_frame_description.pack()
-
-    lbl_hello_svod_first_prof = Label(svod_first_prof_frame_description,
-                                      text='Центр опережающей профессиональной подготовки Республики Бурятия', width=60)
-    lbl_hello_svod_first_prof.pack(side=LEFT, anchor=N, ipadx=25, ipady=10)
-
-    # Картинка
-    path_to_img_svod_first_prof = resource_path('logo.png')
-    img_svod_first_prof = PhotoImage(file=path_to_img_svod_first_prof)
-    Label(svod_first_prof_frame_description,
-          image=img_svod_first_prof, padx=10, pady=10
-          ).pack(side=LEFT, anchor=E, ipadx=5, ipady=5)
-
-    # Создаем область для того чтобы поместить туда подготовительные кнопки(выбрать файл,выбрать папку и т.п.)
-    frame_data_svod_first_prof = LabelFrame(tab_svod_first_prof, text='Подготовка')
-    frame_data_svod_first_prof.pack(padx=10, pady=10)
-
-    # Создаем кнопку Выбрать файл
-
-    btn_svod_itog_list_first_prof = Button(frame_data_svod_first_prof, text='1) Выберите итоговый список',
-                                       font=('Arial Bold', 14),
-                                       command=select_data_itog_list_first_prof)
-    btn_svod_itog_list_first_prof.pack(padx=10, pady=10)
-
-    btn_svod_est_first_prof = Button(frame_data_svod_first_prof, text='2) Выберите файл с оценками',
-                                       font=('Arial Bold', 14),
-                                       command=select_data_est_first_prof)
-    btn_svod_est_first_prof.pack(padx=10, pady=10)
-
-    btn_svod_moodle_first_prof = Button(frame_data_svod_first_prof, text='3) Выберите файл с логинами Moodle',
-                                       font=('Arial Bold', 14),
-                                       command=select_data_moodle_first_prof)
-    btn_svod_moodle_first_prof.pack(padx=10, pady=10)
+    btn_bvb_process = Button(tab_bvb, text='4) Выполнить обработку',
+                             font=('Arial Bold', 20),
+                             command=processing_create_svod_bvb)
+    btn_bvb_process.pack(padx=10, pady=10)
 
 
 
-    btn_svod_first_prof_choose_end_folder = Button(frame_data_svod_first_prof, text='4) Выберите конечную папку',
-                                                   font=('Arial Bold', 14),
-                                                   command=select_result_svod_folder
-                                                   )
-    btn_svod_first_prof_choose_end_folder.pack(padx=10, pady=10)
-
-    # Создаем кнопку слияния
-
-    btn_svod_first_prof_process = Button(tab_svod_first_prof, text='5) Выполнить обработку',
-                                         font=('Arial Bold', 20),
-                                         command=processing_create_svod_first_prof)
-    btn_svod_first_prof_process.pack(padx=10, pady=10)
-
+    # """
+    # Создаем вкладку
+    # """
+    # tab_template = ttk.Frame(tab_control)
+    # tab_control.add(tab_template, text='Подготовка данных\nПервая профессия')
+    #
+    # template_frame_description = LabelFrame(tab_template)
+    # template_frame_description.pack()
+    #
+    # lbl_hello_template = Label(template_frame_description,
+    #                                text='Центр опережающей профессиональной подготовки Республики Бурятия', width=60)
+    # lbl_hello_template.pack(side=LEFT, anchor=N, ipadx=25, ipady=10)
+    #
+    # # Картинка
+    # path_to_img_template = resource_path('logo.png')
+    # img_template = PhotoImage(file=path_to_img_template)
+    # Label(template_frame_description,
+    #       image=img_template, padx=10, pady=10
+    #       ).pack(side=LEFT, anchor=E, ipadx=5, ipady=5)
+    #
+    # # Создаем область для того чтобы поместить туда подготовительные кнопки(выбрать файл,выбрать папку и т.п.)
+    # frame_data_template = LabelFrame(tab_template, text='Подготовка')
+    # frame_data_template.pack(padx=10, pady=10)
+    #
+    # # Создаем кнопку Выбрать файл
+    #
+    # btn_template_first = Button(frame_data_template, text='1) Выберите файл Яндекс формы', font=('Arial Bold', 14),
+    #                             command=select_data_yandex_first_prof)
+    # btn_template_first.pack(padx=10, pady=10)
+    #
+    #
+    #
+    # btn_template_choose_end_folder = Button(frame_data_template, text='2) Выберите конечную папку',
+    #                                         font=('Arial Bold', 14),
+    #                                         command=select_result_yandex_first_prof_folder
+    #                                         )
+    # btn_template_choose_end_folder.pack(padx=10, pady=10)
+    #
+    # # Создаем кнопку слияния
+    #
+    # btn_template_process = Button(tab_template, text='3) Выполнить обработку',
+    #                               font=('Arial Bold', 20),
+    #                               command=processing_preparation_yandex_first_prof)
+    # btn_template_process.pack(padx=10, pady=10)
+    #
+    #
+    # """
+    # Создаем вкладку для создания Сводов
+    # """
+    # tab_svod_first_prof = ttk.Frame(tab_control)
+    # tab_control.add(tab_svod_first_prof, text='Сводка\nПервая профессия')
+    #
+    # svod_first_prof_frame_description = LabelFrame(tab_svod_first_prof)
+    # svod_first_prof_frame_description.pack()
+    #
+    # lbl_hello_svod_first_prof = Label(svod_first_prof_frame_description,
+    #                                   text='Центр опережающей профессиональной подготовки Республики Бурятия', width=60)
+    # lbl_hello_svod_first_prof.pack(side=LEFT, anchor=N, ipadx=25, ipady=10)
+    #
+    # # Картинка
+    # path_to_img_svod_first_prof = resource_path('logo.png')
+    # img_svod_first_prof = PhotoImage(file=path_to_img_svod_first_prof)
+    # Label(svod_first_prof_frame_description,
+    #       image=img_svod_first_prof, padx=10, pady=10
+    #       ).pack(side=LEFT, anchor=E, ipadx=5, ipady=5)
+    #
+    # # Создаем область для того чтобы поместить туда подготовительные кнопки(выбрать файл,выбрать папку и т.п.)
+    # frame_data_svod_first_prof = LabelFrame(tab_svod_first_prof, text='Подготовка')
+    # frame_data_svod_first_prof.pack(padx=10, pady=10)
+    #
+    # # Создаем кнопку Выбрать файл
+    #
+    # btn_svod_itog_list_first_prof = Button(frame_data_svod_first_prof, text='1) Выберите итоговый список',
+    #                                    font=('Arial Bold', 14),
+    #                                    command=select_data_itog_list_first_prof)
+    # btn_svod_itog_list_first_prof.pack(padx=10, pady=10)
+    #
+    # btn_svod_est_first_prof = Button(frame_data_svod_first_prof, text='2) Выберите файл с оценками',
+    #                                    font=('Arial Bold', 14),
+    #                                    command=select_data_est_first_prof)
+    # btn_svod_est_first_prof.pack(padx=10, pady=10)
+    #
+    # btn_svod_moodle_first_prof = Button(frame_data_svod_first_prof, text='3) Выберите файл с логинами Moodle',
+    #                                    font=('Arial Bold', 14),
+    #                                    command=select_data_moodle_first_prof)
+    # btn_svod_moodle_first_prof.pack(padx=10, pady=10)
+    #
+    #
+    #
+    # btn_svod_first_prof_choose_end_folder = Button(frame_data_svod_first_prof, text='4) Выберите конечную папку',
+    #                                                font=('Arial Bold', 14),
+    #                                                command=select_result_svod_folder
+    #                                                )
+    # btn_svod_first_prof_choose_end_folder.pack(padx=10, pady=10)
+    #
+    # # Создаем кнопку слияния
+    #
+    # btn_svod_first_prof_process = Button(tab_svod_first_prof, text='5) Выполнить обработку',
+    #                                      font=('Arial Bold', 20),
+    #                                      command=processing_create_svod_first_prof)
+    # btn_svod_first_prof_process.pack(padx=10, pady=10)
+    #
 
 
 
