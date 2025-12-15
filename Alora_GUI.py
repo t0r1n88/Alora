@@ -388,7 +388,7 @@ if __name__ == '__main__':
 
     # Создаем кнопку Выбрать файл
 
-    btn_bvb_rmg = Button(frame_data_bvb, text='1) Выберите отчет по форме Минпросвещения', font=('Arial Bold', 14),
+    btn_bvb_rmg = Button(frame_data_bvb, text='1) Выберите файл Россия мои горизонты', font=('Arial Bold', 14),
                            command=select_data_rmg)
     btn_bvb_rmg.pack(padx=10, pady=10)
 

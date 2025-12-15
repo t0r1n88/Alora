@@ -174,12 +174,12 @@ def create_svod_bvb(bvb_data:str,rmg_data:str, end_folder:str):
         # без архивных
         for name_events in lst_cols_events:
             dct_name_events,dct_separate_events = create_events_svod(event_df.copy(),name_events)
-            with pd.ExcelWriter(f'{end_folder}/Без архивных/СВОД_{dct_name_file[name_events]}_{current_date}.xlsx', engine='xlsxwriter') as writer:
+            with pd.ExcelWriter(f'{end_folder}/Без архивных/БА_СВОД_{dct_name_file[name_events]}_{current_date}.xlsx', engine='xlsxwriter') as writer:
                 for name_sheet, out_df in dct_name_events.items():
                     out_df.to_excel(writer, sheet_name=str(name_sheet), index=True)
 
             # Создаем папку для хранения отдельных по муниципалитетам
-            path_events_file = f'{end_folder}/Без архивных/{dct_name_file[name_events]}'  #
+            path_events_file = f'{end_folder}/Без архивных/БА_{dct_name_file[name_events]}'  #
             if not os.path.exists(path_events_file):
                 os.makedirs(path_events_file)
 
@@ -191,12 +191,12 @@ def create_svod_bvb(bvb_data:str,rmg_data:str, end_folder:str):
 
         for name_events in lst_cols_events:
             dct_name_events,dct_separate_events = create_events_svod(archive_df.copy(),name_events)
-            with pd.ExcelWriter(f'{end_folder}/С архивными/СВОД_{dct_name_file[name_events]}_{current_date}.xlsx', engine='xlsxwriter') as writer:
+            with pd.ExcelWriter(f'{end_folder}/С архивными/А_СВОД_{dct_name_file[name_events]}_{current_date}.xlsx', engine='xlsxwriter') as writer:
                 for name_sheet, out_df in dct_name_events.items():
                     out_df.to_excel(writer, sheet_name=str(name_sheet), index=True)
 
             # Создаем папку для хранения отдельных по муниципалитетам
-            path_events_file = f'{end_folder}/С архивными/{dct_name_file[name_events]}'  #
+            path_events_file = f'{end_folder}/С архивными/А_{dct_name_file[name_events]}'  #
             if not os.path.exists(path_events_file):
                 os.makedirs(path_events_file)
 
