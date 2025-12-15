@@ -147,7 +147,12 @@ def create_svod_bvb(bvb_data:str,rmg_data:str, end_folder:str):
         """
         Обработка файла мероприятиями
         """
+        # Без архивных
         event_df = pd.read_excel(bvb_data,skiprows=2)
+        archive_df = event_df.copy() # делаем копию вместе с архивными
+        archive_df = archive_df[archive_df['Дата последнего входа на платформу'].str.contains('2025',na=False)]
+
+
         event_df = event_df[event_df['Дата архивации'] == 'Нет'] # Отбрасываем тех кто в архиве
         lst_cols_events = ['Количество пройденных диагностик (за календарный год)','Кол-во посещенных профессиональных и партнерских проб (за календарный год)',
                            'Кол-во посещенных экскурсий на предприятие (за календарный год)','Кол-во посещенных экскурсий в корпоративный музей (за календарный год)',
@@ -158,14 +163,40 @@ def create_svod_bvb(bvb_data:str,rmg_data:str, end_folder:str):
         'Кол-во посещенных экскурсий в корпоративный музей (за календарный год)':'Корпоративные музеи',
                            'Кол-во посещенных мастер-классов (за календарный год)':'Мастер-классы'}
 
+        # Создаем папки для деления
+        if not os.path.exists(f'{end_folder}/Без архивных'):
+            os.makedirs(f'{end_folder}/Без архивных')
+
+        if not os.path.exists(f'{end_folder}/С архивными'):
+            os.makedirs(f'{end_folder}/С архивными')
+
+
+        # без архивных
         for name_events in lst_cols_events:
             dct_name_events,dct_separate_events = create_events_svod(event_df.copy(),name_events)
-            with pd.ExcelWriter(f'{end_folder}/СВОД_{dct_name_file[name_events]}_{current_date}.xlsx', engine='xlsxwriter') as writer:
+            with pd.ExcelWriter(f'{end_folder}/Без архивных/СВОД_{dct_name_file[name_events]}_{current_date}.xlsx', engine='xlsxwriter') as writer:
                 for name_sheet, out_df in dct_name_events.items():
                     out_df.to_excel(writer, sheet_name=str(name_sheet), index=True)
 
             # Создаем папку для хранения отдельных по муниципалитетам
-            path_events_file = f'{end_folder}/{dct_name_file[name_events]}'  #
+            path_events_file = f'{end_folder}/Без архивных/{dct_name_file[name_events]}'  #
+            if not os.path.exists(path_events_file):
+                os.makedirs(path_events_file)
+
+            for name_sheet, out_df in dct_separate_events.items():
+                out_df.to_excel(f'{path_events_file}/{name_sheet}_{current_date}.xlsx', index=True)
+
+
+        # с архивными
+
+        for name_events in lst_cols_events:
+            dct_name_events,dct_separate_events = create_events_svod(archive_df.copy(),name_events)
+            with pd.ExcelWriter(f'{end_folder}/С архивными/СВОД_{dct_name_file[name_events]}_{current_date}.xlsx', engine='xlsxwriter') as writer:
+                for name_sheet, out_df in dct_name_events.items():
+                    out_df.to_excel(writer, sheet_name=str(name_sheet), index=True)
+
+            # Создаем папку для хранения отдельных по муниципалитетам
+            path_events_file = f'{end_folder}/С архивными/{dct_name_file[name_events]}'  #
             if not os.path.exists(path_events_file):
                 os.makedirs(path_events_file)
 
@@ -213,6 +244,7 @@ def create_svod_bvb(bvb_data:str,rmg_data:str, end_folder:str):
 
 if __name__ == '__main__':
     main_bvb_data = 'data/students.xlsx'
+    main_bvb_data = 'data/Сводный У-У на 15.12.xlsx'
     main_rmg_data = 'data/рмг на 03.12.xlsx'
     main_end_folder = 'data/Результат'
 
