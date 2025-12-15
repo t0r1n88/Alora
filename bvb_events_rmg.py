@@ -119,6 +119,16 @@ def create_svod_bvb(bvb_data:str,rmg_data:str, end_folder:str):
 
         dct_rmg_df['Классы'] = svod_rmg_class_df
 
+
+        main_rmg_svod_df = pd.pivot_table(rmg_df,values='Численность всех учащихся 6-11 классов (в том числе с ОВЗ и инвалидностью), зарегистрированных на платформе 2021-2025 гг.и  посетивших хотя бы одно занятие "Россия - мои горизонты"',
+                                      index='Образовательная организация',
+                                      aggfunc='sum', margins=True, margins_name='Итого'
+                                      )
+
+        main_rmg_svod_df.to_excel(f'{end_folder}/Количество учеников РМГ_{current_date}.xlsx',index=True)
+
+
+
         # Создаем отдельные своды по муниципалитетам
         lst_rmg_mun = rmg_df['Муниципалитет'].unique()
         set_rmg_used_name_sheet = set() # множество для хранения названий листов
@@ -151,6 +161,19 @@ def create_svod_bvb(bvb_data:str,rmg_data:str, end_folder:str):
         event_df = pd.read_excel(bvb_data,skiprows=2)
         archive_df = event_df.copy() # делаем копию вместе с архивными
         archive_df = archive_df[archive_df['Дата последнего входа на платформу'].str.contains('2025',na=False)]
+
+        count_df = event_df.copy()
+        count_df = count_df[count_df['Дата архивации'] == 'Нет']
+
+        main_count_svod_df = pd.pivot_table(count_df,values='ФИО',
+                                      index='Образовательная организация',
+                                      aggfunc='count', margins=True, margins_name='Итого'
+                                      )
+
+        main_count_svod_df.to_excel(f'{end_folder}/Количество зарегистрированных учеников{current_date}.xlsx',index=True)
+
+
+
 
 
         event_df = event_df[event_df['Дата архивации'] == 'Нет'] # Отбрасываем тех кто в архиве
@@ -185,6 +208,7 @@ def create_svod_bvb(bvb_data:str,rmg_data:str, end_folder:str):
 
             for name_sheet, out_df in dct_separate_events.items():
                 out_df.to_excel(f'{path_events_file}/{name_sheet}_{current_date}.xlsx', index=True)
+
 
 
         # с архивными
@@ -245,7 +269,7 @@ def create_svod_bvb(bvb_data:str,rmg_data:str, end_folder:str):
 if __name__ == '__main__':
     main_bvb_data = 'data/students.xlsx'
     main_bvb_data = 'data/Сводный У-У на 15.12.xlsx'
-    main_rmg_data = 'data/рмг на 03.12.xlsx'
+    main_rmg_data = 'data/15.12 РМГ У-У.xlsx'
     main_end_folder = 'data/Результат'
 
     create_svod_bvb(main_bvb_data,main_rmg_data,main_end_folder)
