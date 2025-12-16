@@ -44,7 +44,7 @@ def calc_second_part(row):
     :param row:
     :return:
     """
-    if all(x > 3.00 for x in row):
+    if all(x >= 3.00 for x in row):
         return 1
     else:
         return 0
@@ -56,7 +56,7 @@ def calc_third_part(row):
     :param row:
     :return:
     """
-    if all(x > 3.00 for x in row[:4]) and row[4] >= 3.00 and row[5] >= 5.00:
+    if all(x >= 3.00 for x in row[:4]) and row[4] >= 3.00 and row[5] >= 5.00:
         return 1
     else:
         return 0
