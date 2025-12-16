@@ -79,6 +79,72 @@ def create_events_svod(df:pd.DataFrame,name_col_events:str):
 
 
 
+def create_all_svod_mun(rmg_df:pd.DataFrame, base_df:pd.DataFrame,archive_df:pd.DataFrame,name_column:str):
+    """
+    :param rmg_df: данные РМГ
+    :param base_df: данные билет в будущее
+    :param archive_df: датафрейм с архивными данными но
+    :param name_column: имя колонки по которой будут создаваться своды
+    :return: словарь
+    """
+    lst_cols_events = ['Количество пройденных диагностик (за календарный год)',
+                       'Кол-во посещенных профессиональных и партнерских проб (за календарный год)',
+                       'Кол-во посещенных экскурсий на предприятие (за календарный год)',
+                       'Кол-во посещенных мастер-классов (за календарный год)',
+                       'Кол-во посещенных экскурсий в корпоративный музей (за календарный год)'
+                       ]
+
+
+    # Считаем количество зарегистрированных
+    count_df = base_df[base_df['Дата архивации'] == 'Нет']
+
+    main_svod_df = pd.pivot_table(count_df, values='ФИО',
+                                        index=name_column,
+                                        aggfunc='count', margins=True, margins_name='Итого'
+                                        )
+
+    # Количество верифицированных
+    verif_df = count_df[count_df['Статус верификации'].str.contains('Верифицирован')]
+    verif_svod_df = pd.pivot_table(verif_df, values='ФИО',
+                                        index=name_column,
+                                        aggfunc='count', margins=True, margins_name='Итого'
+                                        )
+    main_svod_df = main_svod_df.join(verif_svod_df,lsuffix='_left', rsuffix='_right')
+
+    # Считаем РМГ
+    svod_rmg_df = pd.pivot_table(rmg_df,
+                                     values='Численность всех учащихся 6-11 классов (в том числе с ОВЗ и инвалидностью), зарегистрированных на платформе 2021-2025 гг.и  посетивших хотя бы одно занятие "Россия - мои горизонты"',
+                                     index=name_column,
+                                     aggfunc='sum', margins=True, margins_name='Итого')
+
+
+    main_svod_df = main_svod_df.join(svod_rmg_df,lsuffix='_left', rsuffix='_right')
+
+    for event_column in lst_cols_events:
+        temp_df = archive_df[archive_df[event_column] != 0]
+        svod_temp_df = pd.pivot_table(temp_df,
+                                           values='ФИО',
+                                           index=name_column,
+                                           aggfunc='count', margins=True, margins_name='Итого')
+
+        svod_temp_df.columns = [event_column]
+
+        main_svod_df = main_svod_df.join(svod_temp_df,lsuffix='_left', rsuffix='_right')
+
+
+    main_svod_df.columns =['Общее количество','Верификация','РМГ','Диагностика','Профпробы','Экскурсии','Мастер-классы','Корпоративный музей']
+    main_svod_df.fillna(0,inplace=True)
+    main_svod_df['% верифицированных'] = round((main_svod_df['Верификация'] / main_svod_df['Общее количество']) * 100,2)
+    main_svod_df['% РМГ'] = round((main_svod_df['РМГ'] / main_svod_df['Общее количество']) * 100,2)
+    main_svod_df['% Диагностика'] = round((main_svod_df['Диагностика'] / main_svod_df['Общее количество']) * 100,2)
+    main_svod_df['% Профпробы'] = round((main_svod_df['Профпробы'] / main_svod_df['Общее количество']) * 100,2)
+    main_svod_df['% Экскурсии'] = round((main_svod_df['Экскурсии'] / main_svod_df['Общее количество']) * 100,2)
+    main_svod_df['% Мастер-классы'] = round((main_svod_df['Мастер-классы'] / main_svod_df['Общее количество']) * 100,2)
+    main_svod_df['% Корпоративный музей'] = round((main_svod_df['Корпоративный музей'] / main_svod_df['Общее количество']) * 100,2)
+
+    return main_svod_df
+
+
 
 
 
@@ -120,15 +186,6 @@ def create_svod_bvb(bvb_data:str,rmg_data:str, end_folder:str):
         dct_rmg_df['Классы'] = svod_rmg_class_df
 
 
-        main_rmg_svod_df = pd.pivot_table(rmg_df,values='Численность всех учащихся 6-11 классов (в том числе с ОВЗ и инвалидностью), зарегистрированных на платформе 2021-2025 гг.и  посетивших хотя бы одно занятие "Россия - мои горизонты"',
-                                      index='Образовательная организация',
-                                      aggfunc='sum', margins=True, margins_name='Итого'
-                                      )
-
-        main_rmg_svod_df.to_excel(f'{end_folder}/Количество учеников РМГ_{current_date}.xlsx',index=True)
-
-
-
         # Создаем отдельные своды по муниципалитетам
         lst_rmg_mun = rmg_df['Муниципалитет'].unique()
         set_rmg_used_name_sheet = set() # множество для хранения названий листов
@@ -157,21 +214,31 @@ def create_svod_bvb(bvb_data:str,rmg_data:str, end_folder:str):
         """
         Обработка файла мероприятиями
         """
-        # Без архивных
         event_df = pd.read_excel(bvb_data,skiprows=2)
         archive_df = event_df.copy() # делаем копию вместе с архивными
         archive_df = archive_df[archive_df['Дата последнего входа на платформу'].str.contains('2025',na=False)]
 
-        count_df = event_df.copy()
-        count_df = count_df[count_df['Дата архивации'] == 'Нет']
 
-        main_count_svod_df = pd.pivot_table(count_df,values='ФИО',
-                                      index='Образовательная организация',
-                                      aggfunc='count', margins=True, margins_name='Итого'
-                                      )
+        """
+        Создаем общий свод по муниципалитетам
+        """
+        main_svod_mun = create_all_svod_mun(rmg_df,event_df,archive_df,'Муниципалитет')
+        main_svod_mun.to_excel(f'{end_folder}/Общий СВОД Муниципалитеты_{current_date}.xlsx',index=True)
 
-        main_count_svod_df.to_excel(f'{end_folder}/Количество зарегистрированных учеников{current_date}.xlsx',index=True)
+        """
+        Своды по школам муниципалитетов
+        """
+        path_svod = f'{end_folder}/Общие своды по школам'
+        if not os.path.exists(path_svod):
+            os.makedirs(path_svod)
 
+        lst_mun = event_df['Муниципалитет'].unique()
+        for mun in lst_mun:
+            temp_event_df = event_df[event_df['Муниципалитет'] == mun]
+            temp_archive_df = temp_event_df[temp_event_df['Дата последнего входа на платформу'].str.contains('2025',na=False)]
+            temp_rmg_df = rmg_df[rmg_df['Муниципалитет'] == mun]
+            temp_svod_mun = create_all_svod_mun(temp_rmg_df, temp_event_df, temp_archive_df, 'Образовательная организация')
+            temp_svod_mun.to_excel(f'{path_svod}/{mun}_{current_date}.xlsx', index=True)
 
 
 
@@ -244,6 +311,11 @@ def create_svod_bvb(bvb_data:str,rmg_data:str, end_folder:str):
             out_df.to_excel(f'{path_rmg_file}/{name_sheet}_{current_date}.xlsx',index=True)
 
 
+
+
+
+
+
     except PermissionError as e:
         messagebox.showerror('Алора',
                              f'Закройте файлы созданные программой')
@@ -268,8 +340,8 @@ def create_svod_bvb(bvb_data:str,rmg_data:str, end_folder:str):
 
 if __name__ == '__main__':
     main_bvb_data = 'data/students.xlsx'
-    main_bvb_data = 'data/Сводный У-У на 15.12.xlsx'
-    main_rmg_data = 'data/15.12 РМГ У-У.xlsx'
+    # main_bvb_data = 'data/Сводный У-У на 15.12.xlsx'
+    main_rmg_data = 'data/рмг на 03.12.xlsx'
     main_end_folder = 'data/Результат'
 
     create_svod_bvb(main_bvb_data,main_rmg_data,main_end_folder)
