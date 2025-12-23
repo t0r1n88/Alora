@@ -6,11 +6,11 @@ import random
 
 #
 # # Заданное количество строк и столбцов
-rows = 51
-cols = 1
+rows = 200
+cols = 50
 #
 # # Список значений для выбора
-value_list = ['5а','5б','6а','6б','6в']
+value_list = ['никогда','редко','иногда','часто']
 
 # Генерация DataFrame
 df = pd.DataFrame([[random.choice(value_list) for _ in range(cols)] for _ in range(rows)],
