@@ -319,20 +319,20 @@ def short_version_save_result_file(finish_path:str,name_file:str,doc:DocxTemplat
     check_space = re.sub(r'\s','',name_file)
     if len(check_space) == 0:
         name_file = f'Не заполнено_{idx}'
-    if os.path.exists(f'{finish_path}/{name_file}.docx'):
-        doc.save(f'{finish_path}/{name_file}_{idx}.docx')
-        if len(f'{finish_path}/{name_file}_{idx}.pdf') > 255:
-            raise FileNotFoundError
-        convert(f'{finish_path}/{name_file}_{idx}.docx', f'{finish_path}/{name_file}_{idx}.pdf',
-                keep_active=True)
-        os.remove(f'{finish_path}/{name_file}_{idx}.docx')
-    else:
-        doc.save(f'{finish_path}/{name_file}.docx')
-        if len(f'{finish_path}/{name_file}.pdf') > 255:
-            raise FileNotFoundError
-        convert(f'{finish_path}/{name_file}.docx', f'{finish_path}/{name_file}.pdf',
-                keep_active=True)
-        os.remove(f'{finish_path}/{name_file}.docx')
+    # if os.path.exists(f'{finish_path}/{name_file}.docx'):
+    #     doc.save(f'{finish_path}/{name_file}_{idx}.docx')
+    #     if len(f'{finish_path}/{name_file}_{idx}.pdf') > 255:
+    #         raise FileNotFoundError
+    #     convert(f'{finish_path}/{name_file}_{idx}.docx', f'{finish_path}/{name_file}_{idx}.pdf',
+    #             keep_active=True)
+    #     os.remove(f'{finish_path}/{name_file}_{idx}.docx')
+    # else:
+    doc.save(f'{finish_path}/{name_file}.docx')
+    if len(f'{finish_path}/{name_file}.pdf') > 255:
+        raise FileNotFoundError
+    convert(f'{finish_path}/{name_file}.docx', f'{finish_path}/{name_file}.pdf',
+            keep_active=True)
+    os.remove(f'{finish_path}/{name_file}.docx')
 
 
 def second_short_version_save_result_file(finish_path:str,name_file:str,doc:DocxTemplate,idx:int,name_type:str):
@@ -1122,7 +1122,7 @@ def generate_docs_from_template(name_file_template_doc, name_file_data_doc,name_
 
 if __name__ == '__main__':
     name_column_main = 'ФИО'
-    name_type_file_main = 'Справка'
+    name_type_file_main = 'Сертификат'
     name_value_column_main = 'Алехин Данила Прокопьевич'
     mode_pdf_main = 'No'
     name_file_template_doc_main = 'data/Шаблон Студенты ЖурБур_5 лет ЦОПП.docx'
@@ -1132,7 +1132,7 @@ if __name__ == '__main__':
     mode_group_main = 'No'
     main_mode_structure_folder = 'Yes'
     main_structure_folder = '2,3'
-    main_mode_full = 'No'
+    main_mode_full = 'Yes'
 
     generate_docs_from_template(name_file_template_doc_main,name_file_data_doc_main,name_column_main, name_type_file_main, path_to_end_folder_doc_main,
                                 name_value_column_main, mode_pdf_main,
