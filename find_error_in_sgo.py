@@ -208,7 +208,12 @@ def find_error_sgo(data_folder:str,end_folder:str):
                     used_name_sheet.add(short_value.lower())
 
                     dct_sheet_error_df[short_value] = temp_df
+
+                inostr_df = df[~df['Гражданство'].str.contains('|'.join(['Россия','Ошибка']), case=False, regex=True)]
+                dct_sheet_error_df['Иностранцы'] = inostr_df
+                dct_sheet_error_df['Иностранцы по странам'] = inostr_df.groupby('Гражданство').agg({'Дата приказа':'count'}).reset_index()
                 file_error_wb = write_df_to_excel_error_prep_list(dct_sheet_error_df, write_index=False)
+
                 if len(dct_sheet_error_df) != 0:
                     file_error_wb = del_sheet(file_error_wb, ['Sheet', 'Sheet1', 'Для подсчета'])
                     file_error_wb.save(f'{end_folder}/Ошибки_{name_file}.xlsx')
