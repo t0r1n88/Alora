@@ -183,12 +183,26 @@ def find_error_sgo(data_folder:str,end_folder:str):
     # получаем время
     t = time.localtime()
     current_time = time.strftime('%H_%M_%S', t)
-
-    lst_cols = ['Фамилия','Имя','Отчество','Дата рождения','СНИЛС','Гражданство','Серия документа','Номер документа']
+    lst_index_svod = []
+    # Собираем для сводного датафрейма
     for dirpath, dirnames, filenames in os.walk(data_folder):
         for file in filenames:
             if not file.startswith('~$') and (file.endswith('.csv')):
                 name_file = file.split('.csv')[0].strip()
+                svod_name_file = name_file.split('_')[0]
+                lst_index_svod.append(svod_name_file)
+
+    lst_cols = ['Фамилия','Имя','Отчество','Дата рождения','СНИЛС','Гражданство','Серия документа','Номер документа']
+
+    base_svod = pd.DataFrame(columns=lst_cols,index=lst_index_svod)
+    inostr_svod = pd.DataFrame(columns=['Количество иностранцев'],index=lst_index_svod)
+
+
+    for dirpath, dirnames, filenames in os.walk(data_folder):
+        for file in filenames:
+            if not file.startswith('~$') and (file.endswith('.csv')):
+                name_file = file.split('.csv')[0].strip()
+                svod_name_file = name_file.split('_')[0]
                 print(name_file)
                 df = pd.read_csv(f'{dirpath}/{file}',encoding='UTF-8',delimiter=';',dtype=str,on_bad_lines='warn')
                 df['Фамилия'] = df['Фамилия'].apply(check_fio)
@@ -222,14 +236,19 @@ def find_error_sgo(data_folder:str,end_folder:str):
                     else:
                         temp_df.insert(0, '№ строки с ошибкой в исходном файле',
                                        list(map(lambda x: x + 3, list(temp_df.index))))
-                    short_value = value[:27]  # получаем обрезанное значение
-                    short_value = re.sub(r'[\[\]\'+()<> :"?*|\\/]', '_', short_value)
+                    short_value = value[:30]  # получаем обрезанное значение
+                    # short_value = re.sub(r'[\[\]\'+()<> :"?*|\\/]', '_', short_value)
 
                     if short_value.lower() in used_name_sheet:
                         short_value = f'{short_value}_{idx}'  # добавляем окончание
                     used_name_sheet.add(short_value.lower())
 
                     dct_sheet_error_df[short_value] = temp_df
+                    base_svod.loc[svod_name_file,short_value] = len(temp_df)
+
+
+
+
 
 
 
@@ -237,6 +256,8 @@ def find_error_sgo(data_folder:str,end_folder:str):
                     inostr_df = df[
                         ~df['Гражданство'].str.contains('|'.join(['Россия', 'Ошибка']), case=False, regex=True)]
                     dct_sheet_error_df['Иностранцы'] = inostr_df
+                    inostr_svod.loc[svod_name_file,'Количество иностранцев'] = len(inostr_df)
+
                     dct_sheet_error_df['Иностранцы по странам'] = inostr_df.groupby('Гражданство').agg(
                         {'Дата приказа': 'count'}).reset_index()
                     file_error_wb = write_df_to_excel_error_prep_list(dct_sheet_error_df, write_index=False)
@@ -246,11 +267,25 @@ def find_error_sgo(data_folder:str,end_folder:str):
                     inostr_df = df[
                         ~df['Гражданство'].str.contains('|'.join(['Россия', 'Ошибка']), case=False, regex=True)]
                     dct_sheet_error_df['Иностранцы'] = inostr_df
+
+                    inostr_svod.loc[svod_name_file,'Количество иностранцев'] = len(inostr_df)
+
                     dct_sheet_error_df['Иностранцы по странам'] = inostr_df.groupby('Гражданство').agg(
                         {'Дата приказа': 'count'}).reset_index()
                     file_error_wb = write_df_to_excel_error_prep_list(dct_sheet_error_df, write_index=False)
                     file_error_wb = del_sheet(file_error_wb, ['Sheet', 'Sheet1', 'Для подсчета'])
                     file_error_wb.save(f'{end_folder}/НЕТ Ошибок_{name_file}.xlsx')
+
+
+
+
+    base_svod.loc['Итого'] = base_svod.sum()
+    base_svod['ИТОГО по учреждению'] = base_svod.sum(axis=1)
+    inostr_svod.loc['Итого'] = inostr_svod.sum()
+    with pd.ExcelWriter(f'{end_folder}/Свод ошибки, иностранцы.xlsx') as writer:
+        base_svod.to_excel(writer,sheet_name='Ошибки',index=True)
+        inostr_svod.to_excel(writer,sheet_name='Иностранцы',index=True)
+
 
 
 
