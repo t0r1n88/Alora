@@ -82,6 +82,16 @@ def check_fio(value):
     else:
         return f'Ошибка: допустимы только русские буквы дефис и тире: {value}'
 
+def check_fio_patronomic(value):
+    if pd.isna(value):
+        return None
+    value = str(value)
+    result = re.search(r'^[а-яёА-ЯЁ\-\— ]+$',value)
+    if result:
+        return value
+    else:
+        return f'Ошибка: допустимы только русские буквы дефис и тире: {value}'
+
 
 def check_date(value):
     if pd.isna(value):
@@ -125,6 +135,8 @@ def check_series_passport(row:pd.Series):
 
     if type_doc == 'Иностранный паспорт':
         return value
+    if type_doc == 'Вид на жительство':
+        return value
 
     if pd.isna(value):
         return 'Ошибка: Не заполнено'
@@ -142,6 +154,12 @@ def check_number_passport(row:pd.Series):
     type_doc, value = row.tolist()
 
     if type_doc == 'Иностранный паспорт':
+        if pd.isna(value):
+            return 'Ошибка: Не заполнено'
+        return value
+    if type_doc == 'Вид на жительство':
+        if pd.isna(value):
+            return 'Ошибка: Не заполнено'
         return value
     if pd.isna(value):
         return 'Ошибка: Не заполнено'
@@ -175,7 +193,7 @@ def find_error_sgo(data_folder:str,end_folder:str):
                 df = pd.read_csv(f'{dirpath}/{file}',encoding='UTF-8',delimiter=';',dtype=str,on_bad_lines='warn')
                 df['Фамилия'] = df['Фамилия'].apply(check_fio)
                 df['Имя'] = df['Имя'].apply(check_fio)
-                df['Отчество'] = df['Отчество'].apply(check_fio)
+                df['Отчество'] = df['Отчество'].apply(check_fio_patronomic)
 
                 df['Дата рождения'] = df['Дата рождения'].apply(check_date)
                 df['СНИЛС'] = df['СНИЛС'].apply(check_snils)
@@ -196,10 +214,14 @@ def find_error_sgo(data_folder:str,end_folder:str):
                     if temp_df.shape[0] == 0:
                         continue
 
-                    temp_df = temp_df[value].to_frame()  # оставляем только одну колонку
+                    # temp_df = temp_df[value].to_frame()  # оставляем только одну колонку
 
-                    temp_df.insert(0, '№ строки с ошибкой в исходном файле',
-                                   list(map(lambda x: x + 2, list(temp_df.index))))
+                    if 'БРПК' not in name_file:
+                        temp_df.insert(0, '№ строки с ошибкой в исходном файле',
+                                       list(map(lambda x: x + 2, list(temp_df.index))))
+                    else:
+                        temp_df.insert(0, '№ строки с ошибкой в исходном файле',
+                                       list(map(lambda x: x + 3, list(temp_df.index))))
                     short_value = value[:27]  # получаем обрезанное значение
                     short_value = re.sub(r'[\[\]\'+()<> :"?*|\\/]', '_', short_value)
 
@@ -209,15 +231,25 @@ def find_error_sgo(data_folder:str,end_folder:str):
 
                     dct_sheet_error_df[short_value] = temp_df
 
-                inostr_df = df[~df['Гражданство'].str.contains('|'.join(['Россия','Ошибка']), case=False, regex=True)]
-                dct_sheet_error_df['Иностранцы'] = inostr_df
-                dct_sheet_error_df['Иностранцы по странам'] = inostr_df.groupby('Гражданство').agg({'Дата приказа':'count'}).reset_index()
-                file_error_wb = write_df_to_excel_error_prep_list(dct_sheet_error_df, write_index=False)
+
 
                 if len(dct_sheet_error_df) != 0:
+                    inostr_df = df[
+                        ~df['Гражданство'].str.contains('|'.join(['Россия', 'Ошибка']), case=False, regex=True)]
+                    dct_sheet_error_df['Иностранцы'] = inostr_df
+                    dct_sheet_error_df['Иностранцы по странам'] = inostr_df.groupby('Гражданство').agg(
+                        {'Дата приказа': 'count'}).reset_index()
+                    file_error_wb = write_df_to_excel_error_prep_list(dct_sheet_error_df, write_index=False)
                     file_error_wb = del_sheet(file_error_wb, ['Sheet', 'Sheet1', 'Для подсчета'])
                     file_error_wb.save(f'{end_folder}/Ошибки_{name_file}.xlsx')
                 else:
+                    inostr_df = df[
+                        ~df['Гражданство'].str.contains('|'.join(['Россия', 'Ошибка']), case=False, regex=True)]
+                    dct_sheet_error_df['Иностранцы'] = inostr_df
+                    dct_sheet_error_df['Иностранцы по странам'] = inostr_df.groupby('Гражданство').agg(
+                        {'Дата приказа': 'count'}).reset_index()
+                    file_error_wb = write_df_to_excel_error_prep_list(dct_sheet_error_df, write_index=False)
+                    file_error_wb = del_sheet(file_error_wb, ['Sheet', 'Sheet1', 'Для подсчета'])
                     file_error_wb.save(f'{end_folder}/НЕТ Ошибок_{name_file}.xlsx')
 
 
