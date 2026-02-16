@@ -174,8 +174,17 @@ def clean_value(value):
     str_value = str(value)
     str_value = str_value.strip() # очищаем от пробельных символов
     str_value = re.sub(r'\s+',' ',str_value)
-    str_value = str_value.capitalize()
-
+    if '-' not in str_value:
+        str_value = str_value.capitalize()
+    else:
+        print(str_value)
+        lst_part = str_value.split('-')
+        if len(lst_part) == 2:
+            first_part = lst_part[0].capitalize()
+            second_part = lst_part[1].capitalize()
+            str_value = f'{first_part}-{second_part}'
+        else:
+            str_value = str_value.capitalize()
 
     return str_value
 
@@ -414,7 +423,6 @@ def generate_docs_from_template(name_file_template_doc, name_file_data_doc,name_
 
         df.rename(columns={'Выберите школу':'Школа'},inplace=True)
 
-        df.to_excel('data/test.xlsx')
         used_name_file = set()  # множество для уже использованных имен файлов
         # Заполняем Nan
         df.fillna(' ', inplace=True)
