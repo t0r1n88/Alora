@@ -42,8 +42,6 @@ def extract_info_from_pdf(pdf_path, use_opencv=False):
     """
     info = {
         'filename': os.path.basename(pdf_path),
-        'fio': None,
-        'student_id': None
     }
 
 
@@ -81,8 +79,6 @@ def extract_info_from_pdf(pdf_path, use_opencv=False):
         except Exception as e:
             print(f"Ошибка OCR на странице {i + 1}: {e}")
 
-    # Поиск ФИО в тексте
-    print("\nПоиск ФИО и ID в распознанном тексте...")
 
     # Паттерны для поиска ФИО
     fio_patterns = [r'ФИО.*?:\s*([А-ЯЁ][а-яё]+\s+[А-ЯЁ][а-яё]+\s+[А-ЯЁ][а-яё]+)'
@@ -93,7 +89,6 @@ def extract_info_from_pdf(pdf_path, use_opencv=False):
         if fio_match:
             # Берем последнюю группу (само ФИО)
             info['fio'] = fio_match.group(fio_match.lastindex or 1)
-            print(f"  Найдено ФИО: {info['fio']}")
             break
 
     # Поиск Unti-ID
@@ -106,7 +101,6 @@ def extract_info_from_pdf(pdf_path, use_opencv=False):
         id_match = re.search(pattern, full_text, re.IGNORECASE)
         if id_match:
             info['student_id'] = id_match.group(1)
-            print(f"  Найден ID: {info['student_id']}")
             break
 
 
@@ -129,7 +123,7 @@ def main():
     # Путь к вашему PDF файлу
     data_folder = "data/Анкеты ЧТОТиБ/"  # ИЗМЕНИТЕ НА ВАШ ПУТЬ
 
-    base_df = pd.DataFrame(columns=[['№','UNIT ID','ФИО','Статус','Комментарий Провайдера','Имя файла','Название площадки','ФИО Менеджера','Дата аттестация']])
+    base_df = pd.DataFrame(columns=['№','UNIT ID','ФИО','Статус','Комментарий Провайдера','Имя файла','Название площадки','ФИО Менеджера','Дата аттестация'])
 
 
     for dirpath, dirnames, filenames in os.walk(data_folder):
@@ -141,23 +135,25 @@ def main():
 
                 # Извлекаем информацию
                 result = extract_info_from_pdf(f'{dirpath}/{file}', use_opencv=False)
+                result_df = pd.DataFrame(columns=['№','UNIT ID','ФИО','Статус','Комментарий Провайдера','Имя файла','Название площадки','ФИО Менеджера','Дата аттестация'],
+                                         data=[['',result.get('student_id', 'НЕ НАЙДЕНО'),result.get('fio', 'НЕ НАЙДЕНО'),
+                                                   '','',result['filename'],'','','']])
 
-                # Выводим результаты
-                print("\n" + "=" * 60)
-                print("РЕЗУЛЬТАТЫ ИЗВЛЕЧЕНИЯ:")
-                print("=" * 60)
+                base_df = pd.concat([base_df,result_df])
 
-                print(f"Имя файла: {result['filename']}")
+                # print(f"Имя файла: {result['filename']}")
+                #
+                # print(f"\nФИО (из OCR): {result.get('fio', 'НЕ НАЙДЕНО')}")
+                # print(f"Unti-ID (из OCR): {result.get('student_id', 'НЕ НАЙДЕНО')}")
+                #
+                # # Итоговый результат
+                # print("\n" + "=" * 60)
+                # print("ИТОГОВЫЙ РЕЗУЛЬТАТ:")
+                # print("=" * 60)
+                # print(f"ФИО обучающегося: {result.get('fio', 'Не удалось распознать')}")
+                # print(f"Unti-ID: {result.get('student_id', 'Не удалось распознать')}")
 
-                print(f"\nФИО (из OCR): {result.get('fio', 'НЕ НАЙДЕНО')}")
-                print(f"Unti-ID (из OCR): {result.get('student_id', 'НЕ НАЙДЕНО')}")
-
-                # Итоговый результат
-                print("\n" + "=" * 60)
-                print("ИТОГОВЫЙ РЕЗУЛЬТАТ:")
-                print("=" * 60)
-                print(f"ФИО обучающегося: {result.get('fio', 'Не удалось распознать')}")
-                print(f"Unti-ID: {result.get('student_id', 'Не удалось распознать')}")
+    base_df.to_excel('data/res.xlsx')
 
 
 
