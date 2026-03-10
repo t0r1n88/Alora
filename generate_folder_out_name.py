@@ -30,7 +30,7 @@ def create_structure_folder_advanced(
         overwrite: bool = False  # перезаписывать существующие файлы
 ):
     """
-    Расширенная версия с дополнительными параметрами
+    Расширенная версия с копированием полной структуры папок
     """
     df = pd.read_excel(name_folder_file)
 
@@ -38,7 +38,7 @@ def create_structure_folder_advanced(
         print(f"Ошибка: Колонка '{name_column}' не найдена")
         return
 
-    lst_fio = df[name_column].dropna().tolist()
+    lst_fio = df[name_column].dropna().astype(str).tolist()
     print(f"Найдено {len(lst_fio)} записей")
 
     source_path = Path(source_folder)
@@ -46,23 +46,9 @@ def create_structure_folder_advanced(
         print(f"Ошибка: Папка '{source_folder}' не существует")
         return
 
-    # Поиск файлов с учетом паттерна и рекурсивности
-    if recursive:
-        files_to_copy = list(source_path.rglob(file_pattern))
-    else:
-        files_to_copy = list(source_path.glob(file_pattern))
-
-    # Оставляем только файлы
-    files_to_copy = [f for f in files_to_copy if f.is_file()]
-
-    if not files_to_copy:
-        print(f"Внимание: Нет файлов, соответствующих паттерну '{file_pattern}'")
-        return
-
-    print(f"Найдено файлов для копирования: {len(files_to_copy)}")
-
+    # Определяем корневую целевую папку
     target_root = Path(end_folder)
-    target_root.mkdir(exist_ok=True)
+    target_root.mkdir(parents=True, exist_ok=True)
 
     stats = {
         'folders_created': 0,
@@ -72,27 +58,41 @@ def create_structure_folder_advanced(
     }
 
     for fio in lst_fio:
-        fio = str(fio).strip()
+        fio = fio.strip()
+
+        # Полностью копируем дерево папок и файлов
         target_fio_path = target_root / fio
         target_fio_path.mkdir(exist_ok=True)
         stats['folders_created'] += 1
 
-        for file_path in files_to_copy:
-            target_file = target_fio_path / file_path.name
+        # Копируем только те папки и файлы, которые соответствуют заданному шаблону
+        src_tree = []
+        for item in source_path.rglob('*'):
+            if isinstance(item, Path) and item.match(file_pattern):
+                src_tree.append(item.relative_to(source_path))  # относительный путь файла или папки
 
-            # Проверяем, существует ли уже файл
-            if target_file.exists() and not overwrite:
-                print(f"  Файл {file_path.name} уже существует в папке {fio}, пропускаем")
-                stats['files_skipped'] += 1
-                continue
+        for rel_path in src_tree:
+            src_item = source_path / rel_path
 
-            try:
-                shutil.copy2(file_path, target_file)
-                stats['files_copied'] += 1
-                print(f"  + {file_path.name} -> {fio}/")
-            except Exception as e:
-                print(f"  Ошибка при копировании {file_path.name}: {e}")
-                stats['errors'] += 1
+            # Целевое местоположение внутри целевой папки сотрудника
+            dest_item = target_fio_path / rel_path
+
+            # Если элемент является папкой, создаем её
+            if src_item.is_dir():
+                dest_item.mkdir(parents=True, exist_ok=True)
+            elif src_item.is_file():  # Если это файл
+                if dest_item.exists() and not overwrite:
+                    print(f"Файл {src_item.name} уже существует в папке {fio}, пропускаем.")
+                    stats['files_skipped'] += 1
+                    continue
+
+                try:
+                    shutil.copy2(src_item, dest_item)
+                    stats['files_copied'] += 1
+                    print(f"+ {src_item.name} -> {dest_item.parent}/{src_item.name}")
+                except Exception as e:
+                    print(f"Ошибка при копировании {src_item.name}: {e}")
+                    stats['errors'] += 1
 
         print(f"✓ Папка '{fio}' обработана")
 
