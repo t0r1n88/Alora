@@ -29,20 +29,23 @@ for cat,value in dct_value.items():
     # Список колонок с баллами
     lst_cols_ball = [column for column in answers_df.columns if '/ Баллы' in column]
     answers_df[lst_cols_ball] = answers_df[lst_cols_ball].astype(int,errors='ignore') # делаем интовыми
+    answers_df[lst_cols_ball] = answers_df[lst_cols_ball].replace(1, 0.5) # заменяем чтобы не было путаницы
+
+
 
 
 
     # считаем общую сумму
-    answers_df['Общая сумма баллов'] = answers_df[lst_cols_ball].sum(axis=1) / 2
-    person_df['Общая сумма баллов'] = answers_df[lst_cols_ball].sum(axis=1) / 2
+    answers_df['Общая сумма баллов'] = answers_df[lst_cols_ball].sum(axis=1)
+    person_df['Общая сумма баллов'] = answers_df[lst_cols_ball].sum(axis=1)
 
 
     # считаем сумму первых 45
-    answers_df['Баллы по профессии'] = answers_df[lst_cols_ball[:45]].sum(axis=1) / 2
-    person_df['Баллы по профессии'] = answers_df[lst_cols_ball[:45]].sum(axis=1) / 2
+    answers_df['Баллы по профессии'] = answers_df[lst_cols_ball[:45]].sum(axis=1)
+    person_df['Баллы по профессии'] = answers_df[lst_cols_ball[:45]].sum(axis=1)
     # считаем баллы по
-    answers_df['Баллы по ПБОТС'] = answers_df[lst_cols_ball[45:]].sum(axis=1) / 2
-    person_df['Баллы по ПБОТС'] = answers_df[lst_cols_ball[45:]].sum(axis=1) / 2
+    answers_df['Баллы по ПБОТС'] = answers_df[lst_cols_ball[45:]].sum(axis=1)
+    person_df['Баллы по ПБОТС'] = answers_df[lst_cols_ball[45:]].sum(axis=1)
 
     # Сортируем
     answers_df.sort_values(by='Общая сумма баллов',ascending=False,inplace=True)
