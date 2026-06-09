@@ -45,6 +45,7 @@ for cat,value in dct_value.items():
     person_df['Баллы по профессии'] = answers_df[lst_cols_ball[:45]].sum(axis=1)
     # считаем баллы по
     answers_df['Баллы по ПБОТС'] = answers_df[lst_cols_ball[45:]].sum(axis=1)
+
     person_df['Баллы по ПБОТС'] = answers_df[lst_cols_ball[45:]].sum(axis=1)
 
     # Сортируем
