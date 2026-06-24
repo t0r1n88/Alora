@@ -91,7 +91,7 @@ def generate_data_for_dash_priem(data_file:str,end_folder:str):
     dash_spo_df = pd.read_excel(data_file, sheet_name='дашборд СПО', dtype=str)
     dash_spo_df = dash_spo_df[dash_spo_df['region_name'] == 'Республика Бурятия']
 
-    dash_spo_df.drop(columns=['region_name','inn','kpp','okpo','entrance_test','online_application','oktmo'],inplace=True)
+    dash_spo_df.drop(columns=['region_name','inn','kpp','okpo','entrance_test','online_application','oktmo','form_payment_code'],inplace=True)
     dash_spo_df['Специальность'] = dash_spo_df['specialty_code'] + ' ' + dash_spo_df['specialty_name']
     dash_spo_df[['Количество поданных заявлений','Вы не прошли по конкурсу (4 статус, 204)','Вы включены в приказ на зачисление (3 статус, 103)']] = dash_spo_df[['Количество поданных заявлений','Вы не прошли по конкурсу (4 статус, 204)','Вы включены в приказ на зачисление (3 статус, 103)']].astype(int)
 
@@ -115,6 +115,7 @@ def generate_data_for_dash_priem(data_file:str,end_folder:str):
     svod_spo_df = svod_spo_df[svod_spo_df['Регион'] == 'Республика Бурятия']
     svod_spo_df = svod_spo_df.transpose().reset_index()
     svod_spo_df.columns = ['Показатель','Значение']
+    svod_spo_df['Порядок'] = range(1,len(svod_spo_df)+1)
 
     # обработка листа Подано, сутки
     time_spo_df = pd.read_excel(data_file,sheet_name='Подано, сутки')
@@ -129,12 +130,11 @@ def generate_data_for_dash_priem(data_file:str,end_folder:str):
 
     t = time.localtime()
     current_date = time.strftime('%d_%m_%Y', t)
+    org_spec_df.to_excel(f'{end_folder}/ПОО_специальность_{current_date}.xlsx',index=False)
+    dash_spo_df.to_excel(f'{end_folder}/Дашборд_СПО_{current_date}.xlsx',index=False)
+    svod_spo_df.to_excel(f'{end_folder}/свод_СПО_{current_date}.xlsx',index=False)
+    time_spo_df.to_excel(f'{end_folder}/подано_сутки_{current_date}.xlsx',index=False)
 
-    with pd.ExcelWriter(f'{end_folder}/Данные на {current_date}.xlsx') as writer:
-        org_spec_df.to_excel(writer,sheet_name='ПОО_специальность',index=False)
-        dash_spo_df.to_excel(writer,sheet_name='дашборд_СПО',index=False)
-        svod_spo_df.to_excel(writer,sheet_name='свод_СПО',index=False)
-        time_spo_df.to_excel(writer,sheet_name='подано_сутки',index=False)
 
 
 
