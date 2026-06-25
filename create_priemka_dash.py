@@ -115,9 +115,22 @@ def generate_data_for_dash_priem(data_file:str,end_folder:str):
         # Обработка листа свод СПО
         svod_spo_df = pd.read_excel(data_file,sheet_name='свод СПО')
         svod_spo_df = svod_spo_df[svod_spo_df['Регион'] == 'Республика Бурятия']
+
+        # копируем датафрейм для OBRN10
+        obrn_df = svod_spo_df.copy()
+        svod_spo_df = svod_spo_df[svod_spo_df['Мнемоника'] != 'OBRN10']
+        svod_spo_df.drop(columns=['Мнемоника'],inplace=True)
+
         svod_spo_df = svod_spo_df.transpose().reset_index()
         svod_spo_df.columns = ['Показатель','Значение']
         svod_spo_df['Порядок'] = range(1,len(svod_spo_df)+1)
+
+        # Сохраняем ОБРН10
+        obrn_df = obrn_df[obrn_df['Мнемоника'] == 'OBRN10']
+        obrn_df.drop(columns=['Мнемоника'],inplace=True)
+        obrn_df = obrn_df.transpose().reset_index()
+        obrn_df.columns = ['Показатель','Значение']
+        obrn_df['Порядок'] = range(1,len(obrn_df)+1)
 
         # обработка листа Подано, сутки
         time_spo_df = pd.read_excel(data_file,sheet_name='Подано, сутки')
@@ -135,6 +148,8 @@ def generate_data_for_dash_priem(data_file:str,end_folder:str):
         org_spec_df.to_excel(f'{end_folder}/ПОО_специальность_{current_date}.xlsx',index=False)
         dash_spo_df.to_excel(f'{end_folder}/Дашборд_СПО_{current_date}.xlsx',index=False)
         svod_spo_df.to_excel(f'{end_folder}/свод_СПО_{current_date}.xlsx',index=False)
+        obrn_df.to_excel(f'{end_folder}/OBRN10_{current_date}.xlsx',index=False)
+
         time_spo_df.to_excel(f'{end_folder}/подано_сутки_{current_date}.xlsx',index=False)
 
     except PermissionError as e:
