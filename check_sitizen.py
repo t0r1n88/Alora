@@ -74,7 +74,7 @@ df['Ошибка Зачисление Отчисление'] =  df[['Дата з
 
 
 
-df.to_excel('data/res.xlsx')
+df.to_excel('data/res.xlsx',index=False)
 
 
 
