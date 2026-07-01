@@ -137,6 +137,7 @@ def generate_data_for_priem_yandex(data_file:str,end_folder:str):
         main_df['Финансовая основа обучения'] = main_df['Финансовая основа обучения'].apply(extract_pay_form)
         main_df['База'] = main_df['База'].apply(extract_level_educ)
         main_df.sort_values(by='ОУ',inplace=True)
+        main_df.fillna(0,inplace=True)
 
         svod_df = pd.pivot_table(main_df,
                                  values=['Всего заявлений','подано через Госулуги','целевые','по программам Профессионалитета','участники СВО','дети участников СВО'],
