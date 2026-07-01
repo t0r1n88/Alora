@@ -94,8 +94,8 @@ def generate_data_for_priem_yandex(data_file:str,end_folder:str):
         lst_cols = ['ОУ','Код и наименование','База',
                     'Финансовая основа обучения','Форма обучения','План приема',
                     'КЦП','Целевые договора','План приема Профессионалитет',
-                    'Всего заявлений','подано через Госулуги','целевые',
-                    'по программам Профессионалитета','участники СВО','дети участников СВО',]
+                    'Всего заявлений','подано Госулуги','подано целевые',
+                    'подано Профессионалитет','участники СВО','дети участников СВО',]
         main_df = pd.DataFrame(columns=lst_cols)
 
         for sheet in lst_sheets:
@@ -140,7 +140,7 @@ def generate_data_for_priem_yandex(data_file:str,end_folder:str):
         main_df.fillna(0,inplace=True)
 
         svod_df = pd.pivot_table(main_df,
-                                 values=['Всего заявлений','подано через Госулуги','целевые','по программам Профессионалитета','участники СВО','дети участников СВО'],
+                                 values=['Всего заявлений','подано Госулуги','подано целевые','подано Профессионалитет','участники СВО','дети участников СВО'],
                                  index=['ОУ'],
                                  aggfunc='sum',
                                  fill_value=0,)
@@ -148,6 +148,9 @@ def generate_data_for_priem_yandex(data_file:str,end_folder:str):
         total_row = svod_df.sum(axis=0, numeric_only=True)
         total_row.name = 'Итого'  # Называем строку
         svod_df = pd.concat([svod_df, total_row.to_frame().T])
+        print(svod_df.columns)
+        svod_df = svod_df.reindex(columns=['Всего заявлений','подано Госулуги','подано Профессионалитет','подано целевые','участники СВО','дети участников СВО'])
+        print(svod_df.columns)
 
 
 
