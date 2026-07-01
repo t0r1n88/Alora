@@ -109,6 +109,10 @@ def generate_data_for_priem_yandex(data_file:str,end_folder:str):
             # Оставляем только первые cols_to_keep колонок
             temp_df = temp_df.iloc[:, :cols_to_keep]
 
+            temp_df = pd.concat([
+                temp_df.iloc[:, :9],  # первые 9 колонок
+                temp_df.iloc[:, -6:]  # последние 6 колонок
+            ], axis=1)
             temp_df.dropna(inplace=True,thresh=5)
             # проверяем на количество
             if len(temp_df) == 0:
@@ -148,9 +152,7 @@ def generate_data_for_priem_yandex(data_file:str,end_folder:str):
         total_row = svod_df.sum(axis=0, numeric_only=True)
         total_row.name = 'Итого'  # Называем строку
         svod_df = pd.concat([svod_df, total_row.to_frame().T])
-        print(svod_df.columns)
         svod_df = svod_df.reindex(columns=['Всего заявлений','подано Госулуги','подано Профессионалитет','подано целевые','участники СВО','дети участников СВО'])
-        print(svod_df.columns)
 
 
 
