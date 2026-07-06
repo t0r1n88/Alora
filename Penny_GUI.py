@@ -464,7 +464,7 @@ def select_end_folder_doc():
 
 if __name__ == '__main__':
     window = Tk()
-    window.title('Пенни ver 1.1')
+    window.title('Пенни ver 1.11')
     # Устанавливаем размер и положение окна
     set_window_size(window)
     # window.geometry('774x760')

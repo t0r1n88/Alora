@@ -142,6 +142,8 @@ def generate_data_for_priem_yandex(data_file:str,end_folder:str):
         main_df['База'] = main_df['База'].apply(extract_level_educ)
         main_df.sort_values(by='ОУ',inplace=True)
         main_df.fillna(0,inplace=True)
+        main_df[main_df.columns[-10:]] = main_df[main_df.columns[-10:]].apply(pd.to_numeric, errors='coerce').fillna(0).astype(int)
+
 
         svod_df = pd.pivot_table(main_df,
                                  values=['Всего заявлений','подано Госулуги','подано целевые','подано Профессионалитет','участники СВО','дети участников СВО'],
