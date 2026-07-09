@@ -71,6 +71,84 @@ def extract_level_educ(value):
         return f'{value} неизвестный уровень образования'
 
 
+def extract_ugs(value):
+    if pd.isna(value):
+        return 'Не заполнен Код и наименование'
+
+    value = str(value).strip()
+
+    if value.startswith('08.'):
+        return '08.00.00 Техника и технологии строительства'
+    elif value.startswith('09.'):
+        return '09.00.00 Информатика и вычислительная техника'
+    elif value.startswith('11.'):
+        return '11.00.00 Электроника, радиотехника и системы связи'
+    elif value.startswith('12.'):
+        return '12.00.00 Фотоника, приборостроение, оптические и биотехнические системы и технологии'
+    elif value.startswith('13.'):
+        return '13.00.00 Электро- и теплоэнергетика'
+    elif value.startswith('15.'):
+        return '15.00.00 Машиностроение'
+    elif value.startswith('18.'):
+        return '18.00.00 Химические технологии'
+    elif value.startswith('19.'):
+        return '19.00.00 Промышленная экология и биотехнологии'
+    elif value.startswith('20.'):
+        return '20.00.00 Техносферная безопасность и природообустройство'
+    elif value.startswith('21.'):
+        return '21.00.00 Прикладная геология, горное дело, нефтегазовое дело и геодезия'
+    elif value.startswith('23.'):
+        return '23.00.00 Техника и технологии наземного транспорта'
+    elif value.startswith('24.'):
+        return '24.00.00 Авиационная и ракетно-космическая техника'
+    elif value.startswith('25.'):
+        return '25.00.00 Аэронавигация и эксплуатация авиационной и ракетно-космической техники'
+    elif value.startswith('27.'):
+        return '27.00.00 Управление в технических системах'
+    elif value.startswith('29.'):
+        return '29.00.00 Технологии легкой промышленности'
+    elif value.startswith('31.'):
+        return '31.00.00 Клиническая медицина'
+    elif value.startswith('33.'):
+        return '33.00.00 Фармация'
+    elif value.startswith('34.'):
+        return '34.00.00 Сестринское дело'
+    elif value.startswith('35.'):
+        return '35.00.00 Сельское, лесное и рыбное хозяйство'
+    elif value.startswith('36.'):
+        return '36.00.00 Ветеринария и зоотехния'
+    elif value.startswith('38.'):
+        return '38.00.00 Экономика и управление'
+    elif value.startswith('39.'):
+        return '39.00.00 Социология и социальная работа'
+    elif value.startswith('40.'):
+        return '40.00.00 Юриспруденция'
+    elif value.startswith('43.'):
+        return '43.00.00 Сервис и туризм'
+    elif value.startswith('44.'):
+        return '44.00.00 Образование и педагогические науки'
+    elif value.startswith('46.'):
+        return '46.00.00 Гуманитарные науки'
+    elif value.startswith('49.'):
+        return '49.00.00 Физическая культура и спорт'
+    elif value.startswith('51.'):
+        return '51.00.00 Культуроведение и социокультурные проекты'
+    elif value.startswith('52.'):
+        return '52.00.00 Сценические искусства и литературное творчество'
+    elif value.startswith('53.'):
+        return '53.00.00 Музыкальное искусство'
+    elif value.startswith('54.'):
+        return '54.00.00 Изобразительное и прикладные виды искусств'
+    elif value.startswith('55.'):
+        return '55.00.00 Экранные искусства'
+    elif re.search(r'^\d{5,6}',value,re.IGNORECASE):
+        return 'группа ОВЗ'
+
+    else:
+        return f'{value} неизвестная УГС'
+
+
+
 
 
 
@@ -142,7 +220,8 @@ def generate_data_for_priem_yandex(data_file:str,end_folder:str):
         main_df['База'] = main_df['База'].apply(extract_level_educ)
         main_df.sort_values(by='ОУ',inplace=True)
         main_df.fillna(0,inplace=True)
-        main_df[main_df.columns[-10:]] = main_df[main_df.columns[-10:]].apply(pd.to_numeric, errors='coerce').fillna(0).astype(int)
+        main_df['УГС'] = main_df['Код и наименование'].apply(extract_ugs)
+        main_df[main_df.columns[-10:-1]] = main_df[main_df.columns[-10:-1]].apply(pd.to_numeric, errors='coerce').fillna(0).astype(int)
 
 
         svod_df = pd.pivot_table(main_df,
