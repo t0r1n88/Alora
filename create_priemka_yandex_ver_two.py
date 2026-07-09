@@ -210,6 +210,7 @@ def generate_data_for_priem_yandex(data_file:str,end_folder:str):
             temp_df.iloc[:, last_idx:]  # последние 6 колонок
         ], axis=1)
         temp_df.dropna(inplace=True, thresh=5)
+        temp_df.to_excel('data/res2.xlsx')
         temp_df = temp_df[
             temp_df['Наименование ОУ, филиалы'].notna()]  # отбрасываем строки у которых не записан Код специальности
         if len(temp_df) == 0:
@@ -233,7 +234,6 @@ def generate_data_for_priem_yandex(data_file:str,end_folder:str):
 
         # Проверяем наличие колонки с данными госуслуг
         gos_check_lst = [col for col in temp_df.columns if 'Госуслуги' in str(col)]
-        print(gos_check_lst)
         if len(gos_check_lst)> 1:
             temp_error_df = pd.DataFrame(columns=['Лист', 'Ошибка'], data=[[sheet, 'Несколько колонок Количество поданных через Госусуги']])
             error_df = pd.concat([error_df, temp_error_df])
@@ -242,9 +242,19 @@ def generate_data_for_priem_yandex(data_file:str,end_folder:str):
             temp_df['Госуслуги'] = 1
 
         print(temp_df.columns)
-        temp_df.columns = lst_cols
+        # особое исключение для БРИТ
+        if sheet == 'БРИТ':
+            temp_df.drop(columns=['Госуслуги'],inplace=True)
+            temp_df.columns = ['ОУ', 'Код и наименование', 'База',
+                'Финансовая основа обучения', 'Форма обучения', 'План приема',
+                'КЦП', 'Целевые договора', 'План приема Профессионалитет',
+                'Всего заявлений','подано Госулуги', 'подано целевые', 'подано Профессионалитет',
+                'участники СВО', 'дети участников СВО']
+        else:
+            temp_df.to_excel('data/res.xlsx')
+
+            temp_df.columns = lst_cols
         temp_df['ОУ'] = sheet
-        temp_df.to_excel('data/res.xlsx')
 
         temp_df = temp_df.reindex(columns=['ОУ','Код и наименование','База',
                     'Финансовая основа обучения','Форма обучения','План приема',
