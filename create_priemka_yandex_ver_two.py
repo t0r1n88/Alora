@@ -240,7 +240,7 @@ def generate_data_for_priem_yandex(data_file:str,end_folder:str):
         ], axis=1)
 
         temp_df.dropna(inplace=True, thresh=9)
-        temp_df = temp_df[temp_df['Наименование ОУ, филиалы'].notna()]  # отбрасываем строки у которых не записан ОУ
+        # temp_df = temp_df[temp_df['Наименование ОУ, филиалы'].notna()]  # отбрасываем строки у которых не записан ОУ
         temp_df = temp_df[temp_df['КОД и наименование профессий и специальностей'].notna()]  # отбрасываем строки у которых не записан ОУ
 
         if len(temp_df) == 0:
