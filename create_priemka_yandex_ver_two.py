@@ -20,9 +20,13 @@ def extract_educ_form(value):
         return 'очная'
     elif re.search(r'\bОчно\b',form_str):
         return 'очная'
+    elif re.search(r'\bОчное\b',form_str):
+        return 'очная'
     elif re.search(r'\очно[- ]заочн|очн[оы]е?[- ]заочн|оч[-.]заоч',form_str,re.IGNORECASE):
         return 'очно-заочная'
     elif re.search(r'\bзаочная\b',form_str,re.IGNORECASE):
+        return 'заочная'
+    elif re.search(r'\bзаочное\b',form_str,re.IGNORECASE):
         return 'заочная'
 
     else:
@@ -39,7 +43,7 @@ def extract_pay_form(value):
         return 'коммерческая'
     elif re.search(r'бюджет',form_str,re.IGNORECASE):
         return 'бюджет'
-    elif re.search(r'коммер|платн|оплат|договор|ком',form_str,re.IGNORECASE):
+    elif re.search(r'коммер|платн|оплат|договор|ком|полн',form_str,re.IGNORECASE):
         return 'коммерческая'
 
     else:
@@ -66,6 +70,8 @@ def extract_level_educ(value):
         return '9 класс'
     elif re.search(r'СОО',form_str,re.IGNORECASE):
         return '11 класс'
+    elif re.search(r'коррек',form_str,re.IGNORECASE):
+        return 'ОВЗ'
 
     else:
         return f'{value} неизвестный уровень образования'
@@ -173,27 +179,23 @@ def generate_data_for_priem_yandex(data_file:str,end_folder:str):
     main_df = pd.DataFrame(columns=lst_cols)
     for sheet in lst_sheets:
         print(sheet)
-        mark = None # метка для обозначения есть ли Колонки Зачислен
         temp_df = pd.read_excel(data_file, sheet_name=sheet, skiprows=1)
-        check_df = pd.read_excel(data_file, sheet_name=sheet, skiprows=2)
-        check_df = check_df.dropna(axis=1, how='all')
         temp_df = temp_df.dropna(axis=1, how='all')
-        print(f'Проверочный {check_df.shape}')
-        print(f'Рабочий {temp_df.shape}')
 
 
 
         # добавляем колонку ОУ если ее нет
-        if 'Наименование ОУ, филиалы' not in temp_df.columns:
+        lst_ou = [col for col in temp_df.columns if 'филиалы' in str(col).lower()]
+        if len(lst_ou) == 0:
             temp_df.insert(0,'Наименование ОУ, филиалы','1')
-            check_df.insert(0,'Наименование ОУ, филиалы','1')
+        else:
+            temp_df.rename(columns={lst_ou[0]:'Наименование ОУ, филиалы'},inplace=True)
 
 
         # удаляем колонки относящиеся к Зачислено
         if 'Зачислено (принято обучающихся) ' in temp_df.columns:
             idx = temp_df.columns.get_loc('Зачислено (принято обучающихся) ')
             temp_df = temp_df.drop(columns=temp_df.columns[idx:idx + 5])
-            mark = True
 
         # удаляем колонки относящиеся к Зачислено
         if 'Зачислено (принято обучающихся) с сентября по октябрь' in temp_df.columns:
@@ -202,35 +204,34 @@ def generate_data_for_priem_yandex(data_file:str,end_folder:str):
 
 
         # Находим последнюю колонку Всего
+        indices = [i for i, col in enumerate(temp_df.columns)
+                   if temp_df[col].astype(str).str.contains('Всего', na=False).any()]
+        if len(indices) == 0:
+            temp_error_df = pd.DataFrame(columns=['Лист', 'Ошибка'], data=[[sheet, 'Отсутствует строка со значением Всего']])
+            error_df = pd.concat([error_df, temp_error_df])
+            continue
+        last_idx = indices[-1] # берем последнее всего
 
-        total_cols = [col for col in check_df.columns if 'Всего' in str(col)]
-        if mark:
-            if len(total_cols) == 1:
-                last_idx = check_df.columns.get_loc(total_cols[-1]) if total_cols else None
-            else:
-                last_idx = check_df.columns.get_loc(total_cols[-2]) if total_cols else None
-
-        else:
-            last_idx = check_df.columns.get_loc(total_cols[-1]) if total_cols else None
-        print('Проверка last_idx')
-        print(last_idx)
-        print(check_df.shape)
-        print(temp_df.shape)
-
-        print(check_df[check_df.columns[last_idx]])
-        print(temp_df[temp_df.columns[last_idx]])
-        print('Окончание проверки last_idx')
+        #
+        # print(f"Индексы колонок со словом 'Всего': {indices}")
+        # temp_df.to_excel('data/gg.xlsx',index=False)
+        # print(temp_df[temp_df.columns[last_ind]])
 
 
+
+        # print('Проверка last_idx')
+        # print(last_idx)
+        # print(temp_df.shape)
+        # #
+        # print(temp_df[temp_df.columns[last_idx]])
+        # print('Окончание проверки last_idx')
+        # temp_df.to_excel('data/res.xlsx',index=False)
+        # raise ZeroDivisionError
 
         if not last_idx:
             temp_error_df = pd.DataFrame(columns=['Лист', 'Ошибка'], data=[[sheet, 'В конце не найдена колонка Всего']])
             error_df = pd.concat([error_df, temp_error_df])
             continue
-
-        # # находим последнюю колонку Количество заявлений поданных на госуслуги
-        # total_gos_cols = [col for col in temp_df.columns if 'Госуслуги' in str(col)]
-        # last_idx_gos_col = temp_df.columns.get_loc(total_gos_cols[-1]) if total_gos_cols else None
 
 
 
@@ -240,15 +241,17 @@ def generate_data_for_priem_yandex(data_file:str,end_folder:str):
             temp_df.iloc[:, last_idx:]  # последние 6 колонок
         ], axis=1)
 
-        temp_df.dropna(inplace=True, thresh=5)
-        temp_df = temp_df[
-            temp_df['Наименование ОУ, филиалы'].notna()]  # отбрасываем строки у которых не записан Код специальности
+        temp_df.dropna(inplace=True, thresh=9)
+        temp_df = temp_df[temp_df['Наименование ОУ, филиалы'].notna()]  # отбрасываем строки у которых не записан ОУ
+        temp_df = temp_df[temp_df['КОД и наименование профессий и специальностей'].notna()]  # отбрасываем строки у которых не записан ОУ
+
         if len(temp_df) == 0:
             temp_error_df = pd.DataFrame(columns=['Лист', 'Ошибка'], data=[[sheet, 'На заполнен лист']])
             error_df = pd.concat([error_df, temp_error_df])
             continue
         pattern = '|'.join(['итог', 'всего'])
         temp_df = temp_df[~temp_df['Наименование ОУ, филиалы'].str.contains(pattern, case=False, na=False)]
+        temp_df = temp_df[~temp_df['КОД и наименование профессий и специальностей'].str.contains(pattern, case=False, na=False)]
         temp_df = temp_df.applymap(
             lambda x: re.sub(r'\s+', ' ', x) if isinstance(x, str) else x)  # очищаем от лишних пробелов
         temp_df = temp_df.applymap(
@@ -273,7 +276,6 @@ def generate_data_for_priem_yandex(data_file:str,end_folder:str):
         elif len(gos_check_lst) == 0:
             temp_df['Госуслуги'] = 0
 
-        print(temp_df.columns)
         # особое исключение для БРИТ
         if sheet in ('БРИТ','КТИРНЗ'):
             temp_df.drop(columns=['Госуслуги'],inplace=True)
