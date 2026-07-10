@@ -18,8 +18,6 @@ def extract_educ_form(value):
 
     if re.search(r'\bочная\b',form_str,re.IGNORECASE):
         return 'очная'
-    elif re.search(r'\bОчно\b',form_str):
-        return 'очная'
     elif re.search(r'\bОчное\b',form_str):
         return 'очная'
     elif re.search(r'\очно[- ]заочн|очн[оы]е?[- ]заочн|оч[-.]заоч',form_str,re.IGNORECASE):
