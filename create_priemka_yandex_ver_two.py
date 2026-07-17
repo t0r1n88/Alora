@@ -275,7 +275,7 @@ def generate_data_for_priem_yandex(data_file:str,end_folder:str):
             temp_df['Госуслуги'] = 0
 
         # особое исключение для БРИТ
-        if sheet in ('БРИТ','КТИРНЗ','БКТИС'):
+        if sheet in ('БРИТ','КТИРНЗ','БКТИС','БРИЭТ'):
             temp_df.drop(columns=['Госуслуги'],inplace=True)
             temp_df.columns = ['ОУ', 'Код и наименование', 'База',
                 'Финансовая основа обучения', 'Форма обучения', 'План приема',
