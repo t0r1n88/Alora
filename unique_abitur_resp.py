@@ -66,9 +66,29 @@ def merge_file(folder_data:str,error_df:pd.DataFrame):
     return main_df,error_df
 
 
+def split_specialties_robust(text):
+    if pd.isna(text):
+        return []
 
+    text = str(text).strip()
 
+    # Ищем все коды (цифры.цифры.цифры)
+    code_pattern = r'\d{2}\.\d{2}\.\d{2}'
+    positions = [m.start() for m in re.finditer(code_pattern, text)]
 
+    if not positions:
+        return [text]
+
+    result = []
+    for i, pos in enumerate(positions):
+        start = pos
+        end = positions[i + 1] if i + 1 < len(positions) else len(text)
+
+        part = text[start:end].strip().rstrip(',')
+        if part:
+            result.append(part)
+
+    return result
 
 
 
@@ -83,14 +103,18 @@ def check_uniq_abitur(folder_data:str,end_folder:str):
 
 
     df,error_df = merge_file(folder_data,error_df)
-    print(df.shape)
     df = df.dropna(subset=['СНИЛС абитуриента'])
-    print(df.shape)
 
 
     df['СНИЛС абитуриента'] = df['СНИЛС абитуриента'].apply(clear_snils)
 
     # df['ФИО абитуриента'] = df['ФИО абитуриента'].apply(clear_fio)
+    # Разбиваем на списки
+    # Разворачиваем списки в отдельные строки
+    df['Специальности'] = df['Код и наименование специальности/профессии на которую подано заявление'].apply(split_specialties_robust)
+    df = df.explode('Специальности', ignore_index=True)
+
+
     all_value = df.shape[0] # общее количество записей
 
     snils_df = df[~df['СНИЛС абитуриента'].isin(['В СНИЛС не 11 цифр','СНИЛС не заполнен'])]
@@ -98,11 +122,16 @@ def check_uniq_abitur(folder_data:str,end_folder:str):
     correct_snils = snils_df.shape[0] # корректные снилс
     non_correct_snils = bad_snils_df.shape[0] # некорректные снилс
 
-    snils_non_dupl_df = snils_df.drop_duplicates(subset=['СНИЛС абитуриента'])
+    snils_non_dupl_df = snils_df.drop_duplicates(subset=['СНИЛС абитуриента'],keep=False)
+    snils_unique_df = snils_df.drop_duplicates(subset=['СНИЛС абитуриента'])
+    uniq_snils = snils_unique_df.shape[0]
     non_dupl_snils = snils_non_dupl_df.shape[0]
     dupl_df = snils_df[snils_df['СНИЛС абитуриента'].duplicated(keep=False)]
     dupl_df = dupl_df.sort_values(by='СНИЛС абитуриента')
     dupl_snils = dupl_df.shape[0]
+
+    uniq_dupl_df = dupl_df.drop_duplicates(subset=['СНИЛС абитуриента'])
+    dupl_uniq =  uniq_dupl_df.shape[0]
 
     freq_stats = dupl_df['СНИЛС абитуриента'].value_counts().value_counts().sort_index()
     df_freq_stats = pd.DataFrame({
@@ -113,8 +142,9 @@ def check_uniq_abitur(folder_data:str,end_folder:str):
 
 
     # Общий свод по основным показателям
-    svod_df = pd.DataFrame({'Показатель':['Общее количество заявлений','Корректные СНИЛС','Некорректные СНИЛС','Уникальные СНИЛС','Повторяющиеся СНИЛС',],
-                            'Значение':[all_value,correct_snils,non_correct_snils,non_dupl_snils,dupl_snils]})
+    svod_df = pd.DataFrame({'Показатель':['Общее количество заявлений','Корректные СНИЛС','Некорректные СНИЛС','Уникальных абитуриентов','Абитуриенты подавшие заявление на одну специальность/профессию',
+                                          'Количество заявлений поданных на 2 и более специальностей/профессий','Количество абитуриентов подавших 2 и более заявлений'],
+                            'Значение':[all_value,correct_snils,non_correct_snils,uniq_snils,non_dupl_snils,dupl_snils,dupl_uniq]})
 
     # Общее количество
     poo_svod_all_df = pd.pivot_table(df,index=['ПОО'],
@@ -126,7 +156,7 @@ def check_uniq_abitur(folder_data:str,end_folder:str):
     lst_unique_poo = df['ПОО'].unique()
 
     # Подсчитываем статистику по отдельным ПОО
-    main_df = pd.DataFrame(columns=['ПОО','Корректные СНИЛС','Некорректные СНИЛС','Уникальные СНИЛС','Повторяющиеся СНИЛС'])
+    main_df = pd.DataFrame(columns=['ПОО','Корректные СНИЛС','Некорректные СНИЛС','Уникальные СНИЛС','Заявления на 2 и более специальностей/профессий'])
 
 
     for poo in lst_unique_poo:
@@ -138,13 +168,13 @@ def check_uniq_abitur(folder_data:str,end_folder:str):
         value_bad_snils = temp_bad_snils_df.shape[0]
 
         # Уникальные СНИЛС
-        temp_non_dupl_df = snils_non_dupl_df[snils_non_dupl_df['ПОО'] == poo]
+        temp_non_dupl_df = snils_unique_df[snils_unique_df['ПОО'] == poo]
         value_non_dupl = temp_non_dupl_df.shape[0]
         # Повторяющиеся СНИЛС
         temp_dupl_df = dupl_df[dupl_df['ПОО'] == poo]
         value_dupl = temp_dupl_df.shape[0]
 
-        temp_df = pd.DataFrame(columns=['ПОО','Корректные СНИЛС','Некорректные СНИЛС','Уникальные СНИЛС','Повторяющиеся СНИЛС'],
+        temp_df = pd.DataFrame(columns=['ПОО','Корректные СНИЛС','Некорректные СНИЛС','Уникальные СНИЛС','Заявления на 2 и более специальностей/профессий'],
                                data=[[poo,value_correct_snils,value_bad_snils,value_non_dupl,value_dupl]])
 
         main_df = pd.concat([main_df,temp_df])
