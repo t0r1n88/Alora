@@ -45,6 +45,7 @@ def merge_file(folder_data:str,error_df:pd.DataFrame):
     main_df = pd.DataFrame(columns=main_cols)
 
     for file in os.listdir(folder_data):
+        print(file)
         poo = file.split('.xlsx')[0]
         temp_df = pd.read_excel(f'{folder_data}/{file}',dtype=str)
         if len(temp_df) == 0:
@@ -82,10 +83,14 @@ def check_uniq_abitur(folder_data:str,end_folder:str):
 
 
     df,error_df = merge_file(folder_data,error_df)
+    print(df.shape)
+    df = df.dropna(subset=['СНИЛС абитуриента'])
+    print(df.shape)
+
 
     df['СНИЛС абитуриента'] = df['СНИЛС абитуриента'].apply(clear_snils)
 
-    df['ФИО абитуриента'] = df['ФИО абитуриента'].apply(clear_fio)
+    # df['ФИО абитуриента'] = df['ФИО абитуриента'].apply(clear_fio)
     all_value = df.shape[0] # общее количество записей
 
     snils_df = df[~df['СНИЛС абитуриента'].isin(['В СНИЛС не 11 цифр','СНИЛС не заполнен'])]
@@ -163,6 +168,8 @@ def check_uniq_abitur(folder_data:str,end_folder:str):
 
         # df.to_excel(writer,sheet_name='Общий список',index=False)
     error_df.to_excel(f'{end_folder}/Ошибки {current_time}.xlsx',index=False)
+    dupl_df.to_excel(f'{end_folder}/Дубликаты {current_time}.xlsx',index=False)
+    print(error_df)
 
 if __name__ == '__main__':
     main_data_folder = 'data/ПОО'
