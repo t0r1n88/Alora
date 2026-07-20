@@ -156,7 +156,7 @@ def check_uniq_abitur(folder_data:str,end_folder:str):
     lst_unique_poo = df['ПОО'].unique()
 
     # Подсчитываем статистику по отдельным ПОО
-    main_df = pd.DataFrame(columns=['ПОО','Корректные СНИЛС','Некорректные СНИЛС','Уникальные СНИЛС','Заявления на 2 и более специальностей/профессий'])
+    main_df = pd.DataFrame(columns=['ПОО','Корректные СНИЛС','Некорректные СНИЛС','Уникальные абитуриенты (СНИЛС)','Заявления на 2 и более специальностей/профессий'])
 
 
     for poo in lst_unique_poo:
@@ -174,7 +174,7 @@ def check_uniq_abitur(folder_data:str,end_folder:str):
         temp_dupl_df = dupl_df[dupl_df['ПОО'] == poo]
         value_dupl = temp_dupl_df.shape[0]
 
-        temp_df = pd.DataFrame(columns=['ПОО','Корректные СНИЛС','Некорректные СНИЛС','Уникальные СНИЛС','Заявления на 2 и более специальностей/профессий'],
+        temp_df = pd.DataFrame(columns=['ПОО','Корректные СНИЛС','Некорректные СНИЛС','Уникальные абитуриенты (СНИЛС)','Заявления на 2 и более специальностей/профессий'],
                                data=[[poo,value_correct_snils,value_bad_snils,value_non_dupl,value_dupl]])
 
         main_df = pd.concat([main_df,temp_df])
