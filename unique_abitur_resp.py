@@ -104,6 +104,7 @@ def check_uniq_abitur(folder_data:str,end_folder:str):
 
     df,error_df = merge_file(folder_data,error_df)
     df = df.dropna(subset=['СНИЛС абитуриента'])
+    df['Исходный СНИЛС'] = df['СНИЛС абитуриента']
 
 
     df['СНИЛС абитуриента'] = df['СНИЛС абитуриента'].apply(clear_snils)
@@ -164,6 +165,8 @@ def check_uniq_abitur(folder_data:str,end_folder:str):
         temp_bad_snils_df = bad_snils_df[bad_snils_df['ПОО'] == poo]
         value_bad_snils = temp_bad_snils_df.shape[0]
         if len(temp_bad_snils_df) !=0:
+            temp_bad_snils_df=temp_bad_snils_df.reindex(columns=['ПОО','ФИО абитуриента','Исходный СНИЛС','СНИЛС абитуриента','Базовое образование','Код и наименование специальности/профессии на которую подано заявление','Специальности'])
+
             dct_error_snils[poo] = temp_bad_snils_df
 
         # Уникальные СНИЛС
