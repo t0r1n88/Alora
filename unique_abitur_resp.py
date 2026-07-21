@@ -156,7 +156,7 @@ def check_uniq_abitur(folder_data:str,end_folder:str):
     lst_unique_poo = df['ПОО'].unique()
 
     # Подсчитываем статистику по отдельным ПОО
-    main_df = pd.DataFrame(columns=['ПОО','Корректные СНИЛС','Некорректные СНИЛС','Уникальные абитуриенты (СНИЛС)','Заявления на 2 и более специальностей/профессий'])
+    main_df = pd.DataFrame(columns=['ПОО','Заявления с корректным СНИЛС','Заявления с некорректным СНИЛС','Уникальные абитуриенты (СНИЛС)','Заявления на 2 и более специальностей/профессий','Количество абитуриентов подавших 2 и более заявлений'])
 
 
     for poo in lst_unique_poo:
@@ -168,14 +168,26 @@ def check_uniq_abitur(folder_data:str,end_folder:str):
         value_bad_snils = temp_bad_snils_df.shape[0]
 
         # Уникальные СНИЛС
-        temp_non_dupl_df = snils_unique_df[snils_unique_df['ПОО'] == poo]
-        value_non_dupl = temp_non_dupl_df.shape[0]
+        temp_snils_df = snils_df[snils_df['ПОО'] == poo]
+
+        temp_uniq_snils_df =temp_snils_df.drop_duplicates(subset=['СНИЛС абитуриента'])
+        value_non_dupl = temp_uniq_snils_df.shape[0]
         # Повторяющиеся СНИЛС
-        temp_dupl_df = dupl_df[dupl_df['ПОО'] == poo]
+        temp_dupl_df = snils_df[snils_df['ПОО'] == poo]
+        temp_dupl_df = temp_dupl_df[temp_dupl_df['СНИЛС абитуриента'].duplicated(keep=False)]
+
         value_dupl = temp_dupl_df.shape[0]
 
-        temp_df = pd.DataFrame(columns=['ПОО','Корректные СНИЛС','Некорректные СНИЛС','Уникальные абитуриенты (СНИЛС)','Заявления на 2 и более специальностей/профессий'],
-                               data=[[poo,value_correct_snils,value_bad_snils,value_non_dupl,value_dupl]])
+
+        # Подавшие заявления на одну специальность
+        temp_non_dupl_snils_df = temp_snils_df.drop_duplicates(subset=['СНИЛС абитуриента'],keep=False)
+        value_non_dupl_snils = temp_non_dupl_snils_df.shape[0]
+
+        temp_uniq_dupl_df = temp_dupl_df.drop_duplicates(subset=['СНИЛС абитуриента'])
+        value_dupl_uniq = temp_uniq_dupl_df.shape[0]
+
+        temp_df = pd.DataFrame(columns=['ПОО','Заявления с корректным СНИЛС','Заявления с некорректным СНИЛС','Уникальные абитуриенты (СНИЛС)','Абитуриенты подавшие заявление на одну специальность','Заявления на 2 и более специальностей/профессий','Количество абитуриентов подавших 2 и более заявлений'],
+                               data=[[poo,value_correct_snils,value_bad_snils,value_non_dupl,value_non_dupl_snils,value_dupl,value_dupl_uniq]])
 
         main_df = pd.concat([main_df,temp_df])
 
@@ -193,7 +205,7 @@ def check_uniq_abitur(folder_data:str,end_folder:str):
     with pd.ExcelWriter(f'{end_folder}/Свод по абитуриентам {current_time}.xlsx') as writer:
         svod_df.to_excel(writer,sheet_name='Общий свод',index=False)
         df_freq_stats.to_excel(writer,sheet_name='Свод Несколько заявлений',index=False)
-        main_df.to_excel(writer,sheet_name='Свод по ПОО',index=False)
+        main_df.to_excel(writer,sheet_name='Подсчет внутри каждого ПОО',index=False)
 
 
         # df.to_excel(writer,sheet_name='Общий список',index=False)
