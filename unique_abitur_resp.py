@@ -3,7 +3,7 @@
 """
 
 import pandas as pd
-
+import xlsxwriter
 import time
 import re
 import os
@@ -146,11 +146,8 @@ def check_uniq_abitur(folder_data:str,end_folder:str):
                                           'Количество заявлений поданных на 2 и более специальностей/профессий','Количество абитуриентов подавших 2 и более заявлений'],
                             'Значение':[all_value,correct_snils,non_correct_snils,uniq_snils,non_dupl_snils,dupl_snils,dupl_uniq]})
 
-    # Общее количество
-    poo_svod_all_df = pd.pivot_table(df,index=['ПОО'],
-                                     values=['СНИЛС абитуриента'],
-                                     aggfunc='count',
-                                     margins=True,margins_name='Итого').rename(columns={'СНИЛС абитуриента':'Количество'})
+
+    dct_error_snils = dict()
 
 
     lst_unique_poo = df['ПОО'].unique()
@@ -166,6 +163,8 @@ def check_uniq_abitur(folder_data:str,end_folder:str):
         # Некорректные снилс
         temp_bad_snils_df = bad_snils_df[bad_snils_df['ПОО'] == poo]
         value_bad_snils = temp_bad_snils_df.shape[0]
+        if len(temp_bad_snils_df) !=0:
+            dct_error_snils[poo] = temp_bad_snils_df
 
         # Уникальные СНИЛС
         temp_snils_df = snils_df[snils_df['ПОО'] == poo]
@@ -209,7 +208,28 @@ def check_uniq_abitur(folder_data:str,end_folder:str):
 
 
         # df.to_excel(writer,sheet_name='Общий список',index=False)
-    error_df.to_excel(f'{end_folder}/Ошибки {current_time}.xlsx',index=False)
+    # error_df.to_excel(f'{end_folder}/Ошибки {current_time}.xlsx',index=False)
+
+    dct_error_snils.update({'Ошибки в структуре':error_df})
+    wb = xlsxwriter.Workbook(f'{end_folder}/Ошибки {current_time}.xlsx',
+                             {'constant_memory': True, 'nan_inf_to_errors': True})
+    for name_sheet, dupl_df in dct_error_snils.items():
+        data_lst = dupl_df.values.tolist()  # преобразуем в список
+        wb_name_sheet = wb.add_worksheet(name_sheet)  # создаем лист
+        # Запись заголовков
+        headers = list(dupl_df.columns)
+        for col, header in enumerate(headers):
+            wb_name_sheet.write(0, col, header)
+
+        # Запись данных
+        for row, data_row in enumerate(data_lst):
+            for col, cell_value in enumerate(data_row):
+                wb_name_sheet.write(row + 1, col, cell_value)
+    # закрываем
+    wb.close()
+
+
+
     dupl_df.to_excel(f'{end_folder}/Дубликаты {current_time}.xlsx',index=False)
     print(error_df)
 
