@@ -182,6 +182,7 @@ def generate_data_for_priem_yandex(data_file:str,end_folder:str):
 
 
 
+
         # добавляем колонку ОУ если ее нет
         lst_ou = [col for col in temp_df.columns if 'филиалы' in str(col).lower()]
         if len(lst_ou) == 0:
@@ -194,6 +195,11 @@ def generate_data_for_priem_yandex(data_file:str,end_folder:str):
         if 'Зачислено (принято обучающихся) ' in temp_df.columns:
             idx = temp_df.columns.get_loc('Зачислено (принято обучающихся) ')
             temp_df = temp_df.drop(columns=temp_df.columns[idx:idx + 5])
+
+        if 'Зачислено (принято обучающихся)' in temp_df.columns:
+            idx = temp_df.columns.get_loc('Зачислено (принято обучающихся)')
+            temp_df = temp_df.drop(columns=temp_df.columns[idx:idx + 5])
+
 
         # удаляем колонки относящиеся к Зачислено
         if 'Зачислено (принято обучающихся) с сентября по октябрь' in temp_df.columns:
@@ -239,9 +245,12 @@ def generate_data_for_priem_yandex(data_file:str,end_folder:str):
             temp_df.iloc[:, last_idx:]  # последние 6 колонок
         ], axis=1)
 
-        temp_df.dropna(inplace=True, thresh=9)
+
+        temp_df.dropna(inplace=True, thresh=4)
         # temp_df = temp_df[temp_df['Наименование ОУ, филиалы'].notna()]  # отбрасываем строки у которых не записан ОУ
         temp_df = temp_df[temp_df['КОД и наименование профессий и специальностей'].notna()]  # отбрасываем строки у которых не записан ОУ
+
+
 
         if len(temp_df) == 0:
             temp_error_df = pd.DataFrame(columns=['Лист', 'Ошибка'], data=[[sheet, 'На заполнен лист']])

@@ -178,6 +178,7 @@ def generate_data_for_priem_enroll_yandex(data_file:str,end_folder:str):
         temp_df = pd.read_excel(data_file, sheet_name=sheet, skiprows=1)
         temp_df = temp_df.dropna(axis=1, how='all')
 
+
         # добавляем колонку ОУ если ее нет
         lst_ou = [col for col in temp_df.columns if 'филиалы' in str(col).lower()]
         if len(lst_ou) == 0:
@@ -215,8 +216,10 @@ def generate_data_for_priem_enroll_yandex(data_file:str,end_folder:str):
 
         out_temp_df.insert(9,'Всего заявлений',temp_df.iloc[:,prelast_idx])
 
-        out_temp_df.dropna(inplace=True, thresh=9)
+
+        out_temp_df.dropna(inplace=True, thresh=5)
         out_temp_df = out_temp_df[out_temp_df['КОД и наименование профессий и специальностей'].notna()]  # отбрасываем строки у которых не записан ОУ
+
 
         # переименовывываем чтобы потом не путаться
         temp_df = out_temp_df
