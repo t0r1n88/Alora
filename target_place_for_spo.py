@@ -36,15 +36,20 @@ def generate_data_traget_spo(data_file:str,end_folder:str):
     main_df = pd.DataFrame(columns=lst_cols)
     for sheet in lst_sheets:
         print(sheet)
-        temp_df = pd.read_excel(data_file, sheet_name=sheet,usecols='A:D',dtype={'ИНН':str})
-        if len(temp_df) == 0:
+        temp_df = pd.read_excel(data_file, sheet_name=sheet,usecols='A:D')
+        temp_df.dropna(subset='ИНН',inplace=True)
+
+
+
+        if temp_df.shape[1] == 0:
             temp_df = pd.DataFrame(columns=['Наименование работодателя', 'ИНН',
                 'Количество предоставляемых целевых мест','Условия для целевиков'],
                                    data=[['Не указано','Не указано',0,'Не указано']])
         else:
-            temp_df = temp_df.dropna(axis=1, how='all')
+
             temp_df = temp_df[temp_df['Наименование работодателя'].str.strip().astype(bool)]
             temp_df = temp_df[temp_df['Наименование работодателя'].notna()]
+
 
 
 
