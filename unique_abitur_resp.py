@@ -133,7 +133,6 @@ def check_uniq_abitur(folder_data:str,end_folder:str):
 
     uniq_dupl_df = dupl_df.drop_duplicates(subset=['СНИЛС абитуриента'])
     dupl_uniq =  uniq_dupl_df.shape[0]
-
     freq_stats = dupl_df['СНИЛС абитуриента'].value_counts().value_counts().sort_index()
     df_freq_stats = pd.DataFrame({
         'Количество поданных заявлений': freq_stats.index,
@@ -195,10 +194,10 @@ def check_uniq_abitur(folder_data:str,end_folder:str):
 
     main_df = main_df.sort_values(by='ПОО')
     main_df.iloc[:,1:] = main_df.iloc[:,1:].astype(int)
-    total_row = main_df.sum(axis=0)
-    total_row.name = 'Итого'  # Называем строку
-    main_df = pd.concat([main_df, total_row.to_frame().T])
-    main_df.loc['Итого','ПОО'] = 'Итого'
+    # total_row = main_df.sum(axis=0)
+    # total_row.name = 'Итого'  # Называем строку
+    # main_df = pd.concat([main_df, total_row.to_frame().T])
+    # main_df.loc['Итого','ПОО'] = 'Итого'
 
 
 
@@ -208,6 +207,8 @@ def check_uniq_abitur(folder_data:str,end_folder:str):
         svod_df.to_excel(writer,sheet_name='Общий свод',index=False)
         df_freq_stats.to_excel(writer,sheet_name='Свод Несколько заявлений',index=False)
         main_df.to_excel(writer,sheet_name='Подсчет внутри каждого ПОО',index=False)
+        df.to_excel(writer,sheet_name='Общий список',index=False)
+        dupl_df.to_excel(writer,sheet_name='Дубликаты',index=False)
 
 
         # df.to_excel(writer,sheet_name='Общий список',index=False)
@@ -238,7 +239,7 @@ def check_uniq_abitur(folder_data:str,end_folder:str):
 
 if __name__ == '__main__':
     main_data_folder = 'data/ПОО'
-    main_end_folder = 'data'
+    main_end_folder = 'data/Результат СНИЛС'
 
     check_uniq_abitur(main_data_folder,main_end_folder)
 

@@ -39,8 +39,12 @@ def extract_pay_form(value):
 
     if re.search(r'внебюджет',form_str,re.IGNORECASE):
         return 'коммерческая'
+    elif re.search(r'федерал',form_str,re.IGNORECASE):
+        return 'федеральный бюджет'
     elif re.search(r'бюджет',form_str,re.IGNORECASE):
-        return 'бюджет'
+        return 'региональный бюджет'
+    elif re.search(r'Адаптированная программа профессиональной подготовки',form_str,re.IGNORECASE):
+        return 'Адаптированная программа профессиональной подготовки'
     elif re.search(r'коммер|платн|оплат|договор|ком|полн',form_str,re.IGNORECASE):
         return 'коммерческая'
 
