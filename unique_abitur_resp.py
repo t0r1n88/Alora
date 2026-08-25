@@ -115,127 +115,135 @@ def check_uniq_abitur(folder_data:str,end_folder:str):
     df['Специальности'] = df['Код и наименование специальности/профессии на которую подано заявление'].apply(split_specialties_robust)
     df = df.explode('Специальности', ignore_index=True)
 
+    nine_df = df[df['Базовое образование'] == '9 классов'] # 9 классов
+    eleven_df = df[df['Базовое образование'] == '11 классов']
 
-    all_value = df.shape[0] # общее количество записей
-
-    snils_df = df[~df['СНИЛС абитуриента'].isin(['В СНИЛС не 11 цифр','СНИЛС не заполнен'])]
-    bad_snils_df = df[df['СНИЛС абитуриента'].isin(['В СНИЛС не 11 цифр','СНИЛС не заполнен'])]
-    correct_snils = snils_df.shape[0] # корректные снилс
-    non_correct_snils = bad_snils_df.shape[0] # некорректные снилс
-
-    snils_non_dupl_df = snils_df.drop_duplicates(subset=['СНИЛС абитуриента'],keep=False)
-    snils_unique_df = snils_df.drop_duplicates(subset=['СНИЛС абитуриента'])
-    uniq_snils = snils_unique_df.shape[0]
-    non_dupl_snils = snils_non_dupl_df.shape[0]
-    dupl_df = snils_df[snils_df['СНИЛС абитуриента'].duplicated(keep=False)]
-    dupl_df = dupl_df.sort_values(by='СНИЛС абитуриента')
-    dupl_snils = dupl_df.shape[0]
-
-    uniq_dupl_df = dupl_df.drop_duplicates(subset=['СНИЛС абитуриента'])
-    dupl_uniq =  uniq_dupl_df.shape[0]
-    freq_stats = dupl_df['СНИЛС абитуриента'].value_counts().value_counts().sort_index()
-    df_freq_stats = pd.DataFrame({
-        'Количество поданных заявлений': freq_stats.index,
-        'Количество абитуриентов подавших указанное количество заявлений': freq_stats.values
-    })
-    df_freq_stats = df_freq_stats.sort_values(by='Количество поданных заявлений',ascending=False)
-
-
-    # Общий свод по основным показателям
-    svod_df = pd.DataFrame({'Показатель':['Общее количество заявлений','Корректные СНИЛС','Некорректные СНИЛС','Уникальных абитуриентов','Абитуриенты подавшие заявление на одну специальность/профессию',
-                                          'Количество заявлений поданных на 2 и более специальностей/профессий','Количество абитуриентов подавших 2 и более заявлений'],
-                            'Значение':[all_value,correct_snils,non_correct_snils,uniq_snils,non_dupl_snils,dupl_snils,dupl_uniq]})
-
-
-    dct_error_snils = dict()
-
-
-    lst_unique_poo = df['ПОО'].unique()
-
-    # Подсчитываем статистику по отдельным ПОО
-    main_df = pd.DataFrame(columns=['ПОО','Заявления с корректным СНИЛС','Заявления с некорректным СНИЛС','Уникальные абитуриенты (СНИЛС)','Заявления на 2 и более специальностей/профессий','Количество абитуриентов подавших 2 и более заявлений'])
-
-
-    for poo in lst_unique_poo:
-        # Корректные СНИЛС
-        temp_snils_df = snils_df[snils_df['ПОО'] == poo]
-        value_correct_snils = temp_snils_df.shape[0]
-        # Некорректные снилс
-        temp_bad_snils_df = bad_snils_df[bad_snils_df['ПОО'] == poo]
-        value_bad_snils = temp_bad_snils_df.shape[0]
-        if len(temp_bad_snils_df) !=0:
-            temp_bad_snils_df=temp_bad_snils_df.reindex(columns=['ПОО','ФИО абитуриента','Исходный СНИЛС','СНИЛС абитуриента','Базовое образование','Код и наименование специальности/профессии на которую подано заявление','Специальности'])
-
-            dct_error_snils[poo] = temp_bad_snils_df
-
-        # Уникальные СНИЛС
-        temp_snils_df = snils_df[snils_df['ПОО'] == poo]
-
-        temp_uniq_snils_df =temp_snils_df.drop_duplicates(subset=['СНИЛС абитуриента'])
-        value_non_dupl = temp_uniq_snils_df.shape[0]
-        # Повторяющиеся СНИЛС
-        temp_dupl_df = snils_df[snils_df['ПОО'] == poo]
-        temp_dupl_df = temp_dupl_df[temp_dupl_df['СНИЛС абитуриента'].duplicated(keep=False)]
-
-        value_dupl = temp_dupl_df.shape[0]
-
-
-        # Подавшие заявления на одну специальность
-        temp_non_dupl_snils_df = temp_snils_df.drop_duplicates(subset=['СНИЛС абитуриента'],keep=False)
-        value_non_dupl_snils = temp_non_dupl_snils_df.shape[0]
-
-        temp_uniq_dupl_df = temp_dupl_df.drop_duplicates(subset=['СНИЛС абитуриента'])
-        value_dupl_uniq = temp_uniq_dupl_df.shape[0]
-
-        temp_df = pd.DataFrame(columns=['ПОО','Заявления с корректным СНИЛС','Заявления с некорректным СНИЛС','Уникальные абитуриенты (СНИЛС)','Абитуриенты подавшие заявление на одну специальность','Заявления на 2 и более специальностей/профессий','Количество абитуриентов подавших 2 и более заявлений'],
-                               data=[[poo,value_correct_snils,value_bad_snils,value_non_dupl,value_non_dupl_snils,value_dupl,value_dupl_uniq]])
-
-        main_df = pd.concat([main_df,temp_df])
-
-    main_df = main_df.sort_values(by='ПОО')
-    main_df.iloc[:,1:] = main_df.iloc[:,1:].astype(int)
-    # total_row = main_df.sum(axis=0)
-    # total_row.name = 'Итого'  # Называем строку
-    # main_df = pd.concat([main_df, total_row.to_frame().T])
-    # main_df.loc['Итого','ПОО'] = 'Итого'
+    dct_df = {'Общее':df,'9 классов':nine_df,'11 классов':eleven_df}
 
 
 
+    for name,df in dct_df.items():
+
+        all_value = df.shape[0] # общее количество записей
+
+        snils_df = df[~df['СНИЛС абитуриента'].isin(['В СНИЛС не 11 цифр','СНИЛС не заполнен'])]
+        bad_snils_df = df[df['СНИЛС абитуриента'].isin(['В СНИЛС не 11 цифр','СНИЛС не заполнен'])]
+        correct_snils = snils_df.shape[0] # корректные снилс
+        non_correct_snils = bad_snils_df.shape[0] # некорректные снилс
+
+        snils_non_dupl_df = snils_df.drop_duplicates(subset=['СНИЛС абитуриента'],keep=False)
+        snils_unique_df = snils_df.drop_duplicates(subset=['СНИЛС абитуриента'])
+        uniq_snils = snils_unique_df.shape[0]
+        non_dupl_snils = snils_non_dupl_df.shape[0]
+        dupl_df = snils_df[snils_df['СНИЛС абитуриента'].duplicated(keep=False)]
+        dupl_df = dupl_df.sort_values(by='СНИЛС абитуриента')
+        dupl_snils = dupl_df.shape[0]
+
+        uniq_dupl_df = dupl_df.drop_duplicates(subset=['СНИЛС абитуриента'])
+        dupl_uniq =  uniq_dupl_df.shape[0]
+        freq_stats = dupl_df['СНИЛС абитуриента'].value_counts().value_counts().sort_index()
+        df_freq_stats = pd.DataFrame({
+            'Количество поданных заявлений': freq_stats.index,
+            'Количество абитуриентов подавших указанное количество заявлений': freq_stats.values
+        })
+        df_freq_stats = df_freq_stats.sort_values(by='Количество поданных заявлений',ascending=False)
 
 
-    with pd.ExcelWriter(f'{end_folder}/Свод по абитуриентам {current_time}.xlsx') as writer:
-        svod_df.to_excel(writer,sheet_name='Общий свод',index=False)
-        df_freq_stats.to_excel(writer,sheet_name='Свод Несколько заявлений',index=False)
-        main_df.to_excel(writer,sheet_name='Подсчет внутри каждого ПОО',index=False)
-        df.to_excel(writer,sheet_name='Общий список',index=False)
-        dupl_df.to_excel(writer,sheet_name='Дубликаты',index=False)
+        # Общий свод по основным показателям
+        svod_df = pd.DataFrame({'Показатель':['Общее количество заявлений','Корректные СНИЛС','Некорректные СНИЛС','Уникальных абитуриентов','Абитуриенты подавшие заявление на одну специальность/профессию',
+                                              'Количество заявлений поданных на 2 и более специальностей/профессий','Количество абитуриентов подавших 2 и более заявлений'],
+                                'Значение':[all_value,correct_snils,non_correct_snils,uniq_snils,non_dupl_snils,dupl_snils,dupl_uniq]})
 
 
-        # df.to_excel(writer,sheet_name='Общий список',index=False)
-    # error_df.to_excel(f'{end_folder}/Ошибки {current_time}.xlsx',index=False)
-
-    dct_error_snils.update({'Ошибки в структуре':error_df})
-    wb = xlsxwriter.Workbook(f'{end_folder}/Ошибки {current_time}.xlsx',
-                             {'constant_memory': True, 'nan_inf_to_errors': True})
-    for name_sheet, dupl_df in dct_error_snils.items():
-        data_lst = dupl_df.values.tolist()  # преобразуем в список
-        wb_name_sheet = wb.add_worksheet(name_sheet)  # создаем лист
-        # Запись заголовков
-        headers = list(dupl_df.columns)
-        for col, header in enumerate(headers):
-            wb_name_sheet.write(0, col, header)
-
-        # Запись данных
-        for row, data_row in enumerate(data_lst):
-            for col, cell_value in enumerate(data_row):
-                wb_name_sheet.write(row + 1, col, cell_value)
-    # закрываем
-    wb.close()
+        dct_error_snils = dict()
 
 
+        lst_unique_poo = df['ПОО'].unique()
 
-    dupl_df.to_excel(f'{end_folder}/Дубликаты {current_time}.xlsx',index=False)
-    print(error_df)
+        # Подсчитываем статистику по отдельным ПОО
+        main_df = pd.DataFrame(columns=['ПОО','Заявления с корректным СНИЛС','Заявления с некорректным СНИЛС','Уникальные абитуриенты (СНИЛС)','Заявления на 2 и более специальностей/профессий','Количество абитуриентов подавших 2 и более заявлений'])
+
+
+        for poo in lst_unique_poo:
+            # Корректные СНИЛС
+            temp_snils_df = snils_df[snils_df['ПОО'] == poo]
+            value_correct_snils = temp_snils_df.shape[0]
+            # Некорректные снилс
+            temp_bad_snils_df = bad_snils_df[bad_snils_df['ПОО'] == poo]
+            value_bad_snils = temp_bad_snils_df.shape[0]
+            if len(temp_bad_snils_df) !=0:
+                temp_bad_snils_df=temp_bad_snils_df.reindex(columns=['ПОО','ФИО абитуриента','Исходный СНИЛС','СНИЛС абитуриента','Базовое образование','Код и наименование специальности/профессии на которую подано заявление','Специальности'])
+
+                dct_error_snils[poo] = temp_bad_snils_df
+
+            # Уникальные СНИЛС
+            temp_snils_df = snils_df[snils_df['ПОО'] == poo]
+
+            temp_uniq_snils_df =temp_snils_df.drop_duplicates(subset=['СНИЛС абитуриента'])
+            value_non_dupl = temp_uniq_snils_df.shape[0]
+            # Повторяющиеся СНИЛС
+            temp_dupl_df = snils_df[snils_df['ПОО'] == poo]
+            temp_dupl_df = temp_dupl_df[temp_dupl_df['СНИЛС абитуриента'].duplicated(keep=False)]
+
+            value_dupl = temp_dupl_df.shape[0]
+
+
+            # Подавшие заявления на одну специальность
+            temp_non_dupl_snils_df = temp_snils_df.drop_duplicates(subset=['СНИЛС абитуриента'],keep=False)
+            value_non_dupl_snils = temp_non_dupl_snils_df.shape[0]
+
+            temp_uniq_dupl_df = temp_dupl_df.drop_duplicates(subset=['СНИЛС абитуриента'])
+            value_dupl_uniq = temp_uniq_dupl_df.shape[0]
+
+            temp_df = pd.DataFrame(columns=['ПОО','Заявления с корректным СНИЛС','Заявления с некорректным СНИЛС','Уникальные абитуриенты (СНИЛС)','Абитуриенты подавшие заявление на одну специальность','Заявления на 2 и более специальностей/профессий','Количество абитуриентов подавших 2 и более заявлений'],
+                                   data=[[poo,value_correct_snils,value_bad_snils,value_non_dupl,value_non_dupl_snils,value_dupl,value_dupl_uniq]])
+
+            main_df = pd.concat([main_df,temp_df])
+
+        main_df = main_df.sort_values(by='ПОО')
+        main_df.iloc[:,1:] = main_df.iloc[:,1:].astype(int)
+        # total_row = main_df.sum(axis=0)
+        # total_row.name = 'Итого'  # Называем строку
+        # main_df = pd.concat([main_df, total_row.to_frame().T])
+        # main_df.loc['Итого','ПОО'] = 'Итого'
+
+
+
+
+
+        with pd.ExcelWriter(f'{end_folder}/{name}_Свод по абитуриентам {current_time}.xlsx') as writer:
+            svod_df.to_excel(writer,sheet_name='Общий свод',index=False)
+            df_freq_stats.to_excel(writer,sheet_name='Свод Несколько заявлений',index=False)
+            main_df.to_excel(writer,sheet_name='Подсчет внутри каждого ПОО',index=False)
+            df.to_excel(writer,sheet_name='Общий список',index=False)
+            dupl_df.to_excel(writer,sheet_name='Дубликаты',index=False)
+
+
+            # df.to_excel(writer,sheet_name='Общий список',index=False)
+        # error_df.to_excel(f'{end_folder}/Ошибки {current_time}.xlsx',index=False)
+
+        dct_error_snils.update({'Ошибки в структуре':error_df})
+        wb = xlsxwriter.Workbook(f'{end_folder}/{name}_Ошибки {current_time}.xlsx',
+                                 {'constant_memory': True, 'nan_inf_to_errors': True})
+        for name_sheet, dupl_df in dct_error_snils.items():
+            data_lst = dupl_df.values.tolist()  # преобразуем в список
+            wb_name_sheet = wb.add_worksheet(name_sheet)  # создаем лист
+            # Запись заголовков
+            headers = list(dupl_df.columns)
+            for col, header in enumerate(headers):
+                wb_name_sheet.write(0, col, header)
+
+            # Запись данных
+            for row, data_row in enumerate(data_lst):
+                for col, cell_value in enumerate(data_row):
+                    wb_name_sheet.write(row + 1, col, cell_value)
+        # закрываем
+        wb.close()
+
+
+
+        dupl_df.to_excel(f'{end_folder}/{name}_Дубликаты {current_time}.xlsx',index=False)
+        print(error_df)
 
 if __name__ == '__main__':
     main_data_folder = 'data/ПОО'
