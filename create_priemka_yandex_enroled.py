@@ -150,6 +150,8 @@ def extract_ugs(value):
         return '55.00.00 Экранные искусства'
     elif re.search(r'^\d{5,6}',value,re.IGNORECASE):
         return 'группа ОВЗ'
+    elif value == 'Мастер маникюра':
+        return 'группа ОВЗ'
 
     else:
         return f'{value} неизвестная УГС'
