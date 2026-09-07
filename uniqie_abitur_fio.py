@@ -1,5 +1,5 @@
 """
-Скрипт для подсчета количества уникальных абитуриентов в республике
+Скрипт для подсчета количества уникальных абитуриентов в республике по ФИО
 """
 
 import pandas as pd
@@ -7,19 +7,6 @@ import xlsxwriter
 import time
 import re
 import os
-
-def clear_snils(value):
-    value = str(value)
-
-    result = re.findall(r'\d',value)
-    if result:
-        if len(result) == 11:
-            return f'{result[0]}{result[1]}{result[2]}-{result[3]}{result[4]}{result[5]}-{result[6]}{result[7]}{result[8]} {result[9]}{result[10]}'
-        else:
-            return f'В СНИЛС не 11 цифр'
-    else:
-        return 'СНИЛС не заполнен'
-
 
 def clear_fio(value):
     value = str(value)
@@ -29,7 +16,6 @@ def clear_fio(value):
     value_str = re.sub(r'[^а-яА-ЯёЁ]','',value_str).capitalize()
 
     return value_str
-
 
 
 def merge_file(folder_data:str,error_df:pd.DataFrame):
@@ -66,6 +52,7 @@ def merge_file(folder_data:str,error_df:pd.DataFrame):
     return main_df,error_df
 
 
+
 def split_specialties_robust(text):
     if pd.isna(text):
         return []
@@ -91,10 +78,7 @@ def split_specialties_robust(text):
     return result
 
 
-
-
-
-def check_uniq_abitur(folder_data:str,end_folder:str):
+def check_uniq_abitur_fio(folder_data:str,end_folder:str):
 
     error_df = pd.DataFrame(columns=['Файл', 'Ошибка'])
     t = time.localtime()
@@ -103,17 +87,18 @@ def check_uniq_abitur(folder_data:str,end_folder:str):
 
 
     df,error_df = merge_file(folder_data,error_df)
-    df = df.dropna(subset=['СНИЛС абитуриента'])
-    df['Исходный СНИЛС'] = df['СНИЛС абитуриента']
+    df = df.dropna(subset=['ФИО абитуриента'])
 
 
-    df['СНИЛС абитуриента'] = df['СНИЛС абитуриента'].apply(clear_snils)
+    # df['СНИЛС абитуриента'] = df['СНИЛС абитуриента'].apply(clear_snils)
 
-    # df['ФИО абитуриента'] = df['ФИО абитуриента'].apply(clear_fio)
+    df['ФИО очищенное'] = df['ФИО абитуриента'].apply(clear_fio)
     # Разбиваем на списки
     # Разворачиваем списки в отдельные строки
     df['Специальности'] = df['Код и наименование специальности/профессии на которую подано заявление'].apply(split_specialties_robust)
     df = df.explode('Специальности', ignore_index=True)
+
+
 
     nine_df = df[df['Базовое образование'] == '9 классов'] # 9 классов
     eleven_df = df[df['Базовое образование'] == '11 классов']
@@ -124,24 +109,20 @@ def check_uniq_abitur(folder_data:str,end_folder:str):
 
     for name,df in dct_df.items():
 
-        all_value = df.shape[0] # общее количество записей
+        fio_non_dupl_df = df.drop_duplicates(subset=['ФИО очищенное'],keep=False)
+        fio_unique_df = df.drop_duplicates(subset=['ФИО очищенное'])
+        uniq_fio = fio_unique_df.shape[0]
+        non_dupl_fio = fio_non_dupl_df.shape[0]
+        dupl_df = df[df['ФИО очищенное'].duplicated(keep=False)]
 
-        snils_df = df[~df['СНИЛС абитуриента'].isin(['В СНИЛС не 11 цифр','СНИЛС не заполнен'])]
-        bad_snils_df = df[df['СНИЛС абитуриента'].isin(['В СНИЛС не 11 цифр','СНИЛС не заполнен'])]
-        correct_snils = snils_df.shape[0] # корректные снилс
-        non_correct_snils = bad_snils_df.shape[0] # некорректные снилс
+        dupl_df = dupl_df.sort_values(by='ФИО очищенное')
+        dupl_fio = dupl_df.shape[0]
 
-        snils_non_dupl_df = snils_df.drop_duplicates(subset=['СНИЛС абитуриента'],keep=False)
-        snils_unique_df = snils_df.drop_duplicates(subset=['СНИЛС абитуриента'])
-        uniq_snils = snils_unique_df.shape[0]
-        non_dupl_snils = snils_non_dupl_df.shape[0]
-        dupl_df = snils_df[snils_df['СНИЛС абитуриента'].duplicated(keep=False)]
-        dupl_df = dupl_df.sort_values(by='СНИЛС абитуриента')
-        dupl_snils = dupl_df.shape[0]
+        copy_dupl_df = dupl_df.copy()
+        uniq_dupl_df = copy_dupl_df.drop_duplicates(subset=['ФИО очищенное'])
 
-        uniq_dupl_df = dupl_df.drop_duplicates(subset=['СНИЛС абитуриента'])
         dupl_uniq =  uniq_dupl_df.shape[0]
-        freq_stats = dupl_df['СНИЛС абитуриента'].value_counts().value_counts().sort_index()
+        freq_stats = dupl_df['ФИО очищенное'].value_counts().value_counts().sort_index()
         df_freq_stats = pd.DataFrame({
             'Количество поданных заявлений': freq_stats.index,
             'Количество абитуриентов подавших указанное количество заявлений': freq_stats.values
@@ -149,10 +130,11 @@ def check_uniq_abitur(folder_data:str,end_folder:str):
         df_freq_stats = df_freq_stats.sort_values(by='Количество поданных заявлений',ascending=False)
 
 
+
         # Общий свод по основным показателям
-        svod_df = pd.DataFrame({'Показатель':['Общее количество заявлений','Корректные СНИЛС','Некорректные СНИЛС','Уникальных абитуриентов','Абитуриенты подавшие заявление на одну специальность/профессию',
+        svod_df = pd.DataFrame({'Показатель':['Уникальных абитуриентов','Абитуриенты подавшие заявление на одну специальность/профессию',
                                               'Количество заявлений поданных на 2 и более специальностей/профессий','Количество абитуриентов подавших 2 и более заявлений'],
-                                'Значение':[all_value,correct_snils,non_correct_snils,uniq_snils,non_dupl_snils,dupl_snils,dupl_uniq]})
+                                'Значение':[uniq_fio,non_dupl_fio,dupl_fio,dupl_uniq]})
 
 
         dct_error_snils = dict()
@@ -161,42 +143,32 @@ def check_uniq_abitur(folder_data:str,end_folder:str):
         lst_unique_poo = df['ПОО'].unique()
 
         # Подсчитываем статистику по отдельным ПОО
-        main_df = pd.DataFrame(columns=['ПОО','Заявления с корректным СНИЛС','Заявления с некорректным СНИЛС','Уникальные абитуриенты (СНИЛС)','Заявления на 2 и более специальностей/профессий','Количество абитуриентов подавших 2 и более заявлений'])
+        main_df = pd.DataFrame(columns=['ПОО','Уникальные абитуриенты (ФИО)','Заявления на 2 и более специальностей/профессий','Количество абитуриентов подавших 2 и более заявлений'])
 
 
         for poo in lst_unique_poo:
-            # Корректные СНИЛС
-            temp_snils_df = snils_df[snils_df['ПОО'] == poo]
-            value_correct_snils = temp_snils_df.shape[0]
-            # Некорректные снилс
-            temp_bad_snils_df = bad_snils_df[bad_snils_df['ПОО'] == poo]
-            value_bad_snils = temp_bad_snils_df.shape[0]
-            if len(temp_bad_snils_df) !=0:
-                temp_bad_snils_df=temp_bad_snils_df.reindex(columns=['ПОО','ФИО абитуриента','Исходный СНИЛС','СНИЛС абитуриента','Базовое образование','Код и наименование специальности/профессии на которую подано заявление','Специальности'])
-
-                dct_error_snils[poo] = temp_bad_snils_df
 
             # Уникальные СНИЛС
-            temp_snils_df = snils_df[snils_df['ПОО'] == poo]
+            temp_fio_df = df[df['ПОО'] == poo]
 
-            temp_uniq_snils_df =temp_snils_df.drop_duplicates(subset=['СНИЛС абитуриента'])
-            value_non_dupl = temp_uniq_snils_df.shape[0]
+            temp_uniq_fio_df =temp_fio_df.drop_duplicates(subset=['ФИО очищенное'])
+            value_non_dupl = temp_uniq_fio_df.shape[0]
             # Повторяющиеся СНИЛС
-            temp_dupl_df = snils_df[snils_df['ПОО'] == poo]
-            temp_dupl_df = temp_dupl_df[temp_dupl_df['СНИЛС абитуриента'].duplicated(keep=False)]
+            temp_dupl_df = df[df['ПОО'] == poo]
+            temp_dupl_df = temp_dupl_df[temp_dupl_df['ФИО очищенное'].duplicated(keep=False)]
 
             value_dupl = temp_dupl_df.shape[0]
 
 
             # Подавшие заявления на одну специальность
-            temp_non_dupl_snils_df = temp_snils_df.drop_duplicates(subset=['СНИЛС абитуриента'],keep=False)
+            temp_non_dupl_snils_df = temp_fio_df.drop_duplicates(subset=['ФИО очищенное'],keep=False)
             value_non_dupl_snils = temp_non_dupl_snils_df.shape[0]
 
-            temp_uniq_dupl_df = temp_dupl_df.drop_duplicates(subset=['СНИЛС абитуриента'])
+            temp_uniq_dupl_df = temp_dupl_df.drop_duplicates(subset=['ФИО очищенное'])
             value_dupl_uniq = temp_uniq_dupl_df.shape[0]
 
-            temp_df = pd.DataFrame(columns=['ПОО','Заявления с корректным СНИЛС','Заявления с некорректным СНИЛС','Уникальные абитуриенты (СНИЛС)','Абитуриенты подавшие заявление на одну специальность','Заявления на 2 и более специальностей/профессий','Количество абитуриентов подавших 2 и более заявлений'],
-                                   data=[[poo,value_correct_snils,value_bad_snils,value_non_dupl,value_non_dupl_snils,value_dupl,value_dupl_uniq]])
+            temp_df = pd.DataFrame(columns=['ПОО','Уникальные абитуриенты (ФИО)','Абитуриенты подавшие заявление на одну специальность','Заявления на 2 и более специальностей/профессий','Количество абитуриентов подавших 2 и более заявлений'],
+                                   data=[[poo,value_non_dupl,value_non_dupl_snils,value_dupl,value_dupl_uniq]])
 
             main_df = pd.concat([main_df,temp_df])
 
@@ -219,8 +191,6 @@ def check_uniq_abitur(folder_data:str,end_folder:str):
             dupl_df.to_excel(writer,sheet_name='Дубликаты',index=False)
 
 
-            # df.to_excel(writer,sheet_name='Общий список',index=False)
-        # error_df.to_excel(f'{end_folder}/Ошибки {current_time}.xlsx',index=False)
 
         dct_error_snils.update({'Ошибки в структуре':error_df})
         wb = xlsxwriter.Workbook(f'{end_folder}/{name}_Ошибки {current_time}.xlsx',
@@ -247,9 +217,7 @@ def check_uniq_abitur(folder_data:str,end_folder:str):
 
 if __name__ == '__main__':
     main_data_folder = 'data/ПОО'
-    main_end_folder = 'data/Результат СНИЛС'
+    main_end_folder = 'data/Результат ФИО'
 
-    check_uniq_abitur(main_data_folder,main_end_folder)
-
+    check_uniq_abitur_fio(main_data_folder,main_end_folder)
     print('Lindy Booth')
-
