@@ -6,6 +6,8 @@ from generate_sertificat_prof_2026 import generate_docs_from_template
 from bnp_tests import generate_result_bnp # Для генрации результатов БНП
 from create_priemka_dash import generate_data_for_dash_priem # для подготовки даннных для дашборда приемки
 from create_priemka_yandex import generate_data_for_priem_yandex # для подготовки данных для дашборда из яндекс таблицы
+from processing_age_teachers import processing_age_teachers # для подсчета возраста педагогов
+
 import tkinter
 import sys
 import os
@@ -452,10 +454,37 @@ def select_end_folder_doc():
 #
 #
 
+"""
+Для обработки возраста педагогов
+"""
+def select_age_teachers_end_folder():
+    """
+    Функция для выбора конечной папки куда будут складываться итоговые файлы
+    :return:
+    """
+    global path_to_age_teachers_end_folder
+    path_to_age_teachers_end_folder = filedialog.askdirectory()
+
+def select_age_teachers_data_xlsx():
+    """
+    Функция для выбора файла с данными на основе которых будет генерироваться документ
+    :return: Путь к файлу с данными
+    """
+    global age_teachers_data
+    # Получаем путь к файлу
+    age_teachers_data = filedialog.askopenfilename(filetypes=(('Excel files', '*.xlsx'), ('all files', '*.*')))
 
 
+def prepare_age_teachers():
+    """
+    Функция для генерации документов
+    """
+    try:
+        processing_age_teachers(age_teachers_data,path_to_age_teachers_end_folder)
 
-
+    except NameError:
+        messagebox.showerror('',
+                             f'Выберите файл с данными и папку куда будет генерироваться файл')
 
 
 
@@ -464,7 +493,7 @@ def select_end_folder_doc():
 
 if __name__ == '__main__':
     window = Tk()
-    window.title('Пенни ver 1.11')
+    window.title('Обработка возраста преподавателей')
     # Устанавливаем размер и положение окна
     set_window_size(window)
     # window.geometry('774x760')
@@ -490,151 +519,151 @@ if __name__ == '__main__':
        Создаем вкладку для обработки результатов из яндекс таблицы
        """
 
-    tab_yandex_priem_dash = ttk.Frame(tab_control)
-    tab_control.add(tab_yandex_priem_dash, text='Для дашборда из яндекс таблицы')
-
-    yandex_priem_dash_frame_description = LabelFrame(tab_yandex_priem_dash)
-    yandex_priem_dash_frame_description.pack()
-
-    lbl_hello_yandex_priem_dash = Label(yandex_priem_dash_frame_description,
-                                        text='Центр опережающей профессиональной подготовки Республики Бурятия\n'
-                                             'Подготовка данных для дашборда по приемной кампании из Яндекс таблицы'
-
-                                        , width=60)
-    lbl_hello_yandex_priem_dash.pack(side=LEFT, anchor=N, ipadx=25, ipady=10)
-
-    # Картинка
-    path_to_img_yandex_priem_dash = resource_path('logo.png')
-    img_yandex_priem_dash = PhotoImage(file=path_to_img_yandex_priem_dash)
-    Label(yandex_priem_dash_frame_description,
-          image=img_yandex_priem_dash, padx=10, pady=10
-          ).pack(side=LEFT, anchor=E, ipadx=5, ipady=5)
-
-    # Создаем область для того чтобы поместить туда подготовительные кнопки(выбрать файл,выбрать папку и т.п.)
-    frame_data_yandex_priem_dash = LabelFrame(tab_yandex_priem_dash, text='Подготовка')
-    frame_data_yandex_priem_dash.pack(padx=10, pady=10)
-
-    # Создаем кнопку Выбрать файл
-
-    btn_yandex_priem_dash = Button(frame_data_yandex_priem_dash, text='1) Выберите файл яндекс таблицы',
-                                   font=('Arial Bold', 14),
-                                   command=select_data_yandex_priem_dash)
-    btn_yandex_priem_dash.pack(padx=10, pady=10)
-
-    btn_yandex_priem_dash_choose_end_folder = Button(frame_data_yandex_priem_dash, text='2) Выберите конечную папку',
-                                                     font=('Arial Bold', 14),
-                                                     command=select_end_folder_yandex_priem_dash
-                                                     )
-    btn_yandex_priem_dash_choose_end_folder.pack(padx=10, pady=10)
-
-    # Создаем кнопку слияния
-
-    btn_yandex_priem_dash_process = Button(tab_yandex_priem_dash, text='3) Выполнить обработку',
-                                           font=('Arial Bold', 20),
-                                           command=processing_create_result_yandex_priem_dash)
-    btn_yandex_priem_dash_process.pack(padx=10, pady=10)
-
-    """
-       Создаем вкладку для результатов тестирования БНП
-       """
-
-    tab_priem_dash = ttk.Frame(tab_control)
-    tab_control.add(tab_priem_dash, text='Для дашборда по приемке из выгрузки Госуслуг')
-
-    priem_dash_frame_description = LabelFrame(tab_priem_dash)
-    priem_dash_frame_description.pack()
-
-    lbl_hello_priem_dash = Label(priem_dash_frame_description,
-                                 text='Центр опережающей профессиональной подготовки Республики Бурятия\n'
-                                      'Подготовка данных для дашборда по приемной кампании из выгрузки с Госулуг'
-
-                                 , width=60)
-    lbl_hello_priem_dash.pack(side=LEFT, anchor=N, ipadx=25, ipady=10)
-
-    # Картинка
-    path_to_img_priem_dash = resource_path('logo.png')
-    img_priem_dash = PhotoImage(file=path_to_img_priem_dash)
-    Label(priem_dash_frame_description,
-          image=img_priem_dash, padx=10, pady=10
-          ).pack(side=LEFT, anchor=E, ipadx=5, ipady=5)
-
-    # Создаем область для того чтобы поместить туда подготовительные кнопки(выбрать файл,выбрать папку и т.п.)
-    frame_data_priem_dash = LabelFrame(tab_priem_dash, text='Подготовка')
-    frame_data_priem_dash.pack(padx=10, pady=10)
-
-    # Создаем кнопку Выбрать файл
-
-    btn_priem_dash = Button(frame_data_priem_dash, text='1) Выберите файл выгрузки', font=('Arial Bold', 14),
-                            command=select_data_priem_dash)
-    btn_priem_dash.pack(padx=10, pady=10)
-
-    btn_priem_dash_choose_end_folder = Button(frame_data_priem_dash, text='2) Выберите конечную папку',
-                                              font=('Arial Bold', 14),
-                                              command=select_end_folder_priem_dash
-                                              )
-    btn_priem_dash_choose_end_folder.pack(padx=10, pady=10)
-
-    # Создаем кнопку слияния
-
-    btn_priem_dash_process = Button(tab_priem_dash, text='3) Выполнить обработку',
-                                    font=('Arial Bold', 20),
-                                    command=processing_create_result_priem_dash)
-    btn_priem_dash_process.pack(padx=10, pady=10)
-
-
-
-
-
+    # tab_yandex_priem_dash = ttk.Frame(tab_control)
+    # tab_control.add(tab_yandex_priem_dash, text='Для дашборда из яндекс таблицы')
+    #
+    # yandex_priem_dash_frame_description = LabelFrame(tab_yandex_priem_dash)
+    # yandex_priem_dash_frame_description.pack()
+    #
+    # lbl_hello_yandex_priem_dash = Label(yandex_priem_dash_frame_description,
+    #                                     text='Центр опережающей профессиональной подготовки Республики Бурятия\n'
+    #                                          'Подготовка данных для дашборда по приемной кампании из Яндекс таблицы'
+    #
+    #                                     , width=60)
+    # lbl_hello_yandex_priem_dash.pack(side=LEFT, anchor=N, ipadx=25, ipady=10)
+    #
+    # # Картинка
+    # path_to_img_yandex_priem_dash = resource_path('logo.png')
+    # img_yandex_priem_dash = PhotoImage(file=path_to_img_yandex_priem_dash)
+    # Label(yandex_priem_dash_frame_description,
+    #       image=img_yandex_priem_dash, padx=10, pady=10
+    #       ).pack(side=LEFT, anchor=E, ipadx=5, ipady=5)
+    #
+    # # Создаем область для того чтобы поместить туда подготовительные кнопки(выбрать файл,выбрать папку и т.п.)
+    # frame_data_yandex_priem_dash = LabelFrame(tab_yandex_priem_dash, text='Подготовка')
+    # frame_data_yandex_priem_dash.pack(padx=10, pady=10)
+    #
+    # # Создаем кнопку Выбрать файл
+    #
+    # btn_yandex_priem_dash = Button(frame_data_yandex_priem_dash, text='1) Выберите файл яндекс таблицы',
+    #                                font=('Arial Bold', 14),
+    #                                command=select_data_yandex_priem_dash)
+    # btn_yandex_priem_dash.pack(padx=10, pady=10)
+    #
+    # btn_yandex_priem_dash_choose_end_folder = Button(frame_data_yandex_priem_dash, text='2) Выберите конечную папку',
+    #                                                  font=('Arial Bold', 14),
+    #                                                  command=select_end_folder_yandex_priem_dash
+    #                                                  )
+    # btn_yandex_priem_dash_choose_end_folder.pack(padx=10, pady=10)
+    #
+    # # Создаем кнопку слияния
+    #
+    # btn_yandex_priem_dash_process = Button(tab_yandex_priem_dash, text='3) Выполнить обработку',
+    #                                        font=('Arial Bold', 20),
+    #                                        command=processing_create_result_yandex_priem_dash)
+    # btn_yandex_priem_dash_process.pack(padx=10, pady=10)
+    #
+    # """
+    #    Создаем вкладку для результатов тестирования БНП
+    #    """
+    #
+    # tab_priem_dash = ttk.Frame(tab_control)
+    # tab_control.add(tab_priem_dash, text='Для дашборда по приемке из выгрузки Госуслуг')
+    #
+    # priem_dash_frame_description = LabelFrame(tab_priem_dash)
+    # priem_dash_frame_description.pack()
+    #
+    # lbl_hello_priem_dash = Label(priem_dash_frame_description,
+    #                              text='Центр опережающей профессиональной подготовки Республики Бурятия\n'
+    #                                   'Подготовка данных для дашборда по приемной кампании из выгрузки с Госулуг'
+    #
+    #                              , width=60)
+    # lbl_hello_priem_dash.pack(side=LEFT, anchor=N, ipadx=25, ipady=10)
+    #
+    # # Картинка
+    # path_to_img_priem_dash = resource_path('logo.png')
+    # img_priem_dash = PhotoImage(file=path_to_img_priem_dash)
+    # Label(priem_dash_frame_description,
+    #       image=img_priem_dash, padx=10, pady=10
+    #       ).pack(side=LEFT, anchor=E, ipadx=5, ipady=5)
+    #
+    # # Создаем область для того чтобы поместить туда подготовительные кнопки(выбрать файл,выбрать папку и т.п.)
+    # frame_data_priem_dash = LabelFrame(tab_priem_dash, text='Подготовка')
+    # frame_data_priem_dash.pack(padx=10, pady=10)
+    #
+    # # Создаем кнопку Выбрать файл
+    #
+    # btn_priem_dash = Button(frame_data_priem_dash, text='1) Выберите файл выгрузки', font=('Arial Bold', 14),
+    #                         command=select_data_priem_dash)
+    # btn_priem_dash.pack(padx=10, pady=10)
+    #
+    # btn_priem_dash_choose_end_folder = Button(frame_data_priem_dash, text='2) Выберите конечную папку',
+    #                                           font=('Arial Bold', 14),
+    #                                           command=select_end_folder_priem_dash
+    #                                           )
+    # btn_priem_dash_choose_end_folder.pack(padx=10, pady=10)
+    #
+    # # Создаем кнопку слияния
+    #
+    # btn_priem_dash_process = Button(tab_priem_dash, text='3) Выполнить обработку',
+    #                                 font=('Arial Bold', 20),
+    #                                 command=processing_create_result_priem_dash)
+    # btn_priem_dash_process.pack(padx=10, pady=10)
+    #
+    #
+    #
 
 
-    """
-       Создаем вкладку для результатов тестирования БНП
-       """
-
-    tab_bnp = ttk.Frame(tab_control)
-    tab_control.add(tab_bnp, text='Обработка результатов тестирования БНП')
-
-    bnp_frame_description = LabelFrame(tab_bnp)
-    bnp_frame_description.pack()
-
-    lbl_hello_bnp = Label(bnp_frame_description,
-                          text='Центр опережающей профессиональной подготовки Республики Бурятия\n'
-                               'Для работы нужен файл из Яндекс формы'
-
-                               , width=60)
-    lbl_hello_bnp.pack(side=LEFT, anchor=N, ipadx=25, ipady=10)
-
-    # Картинка
-    path_to_img_bnp = resource_path('logo.png')
-    img_bnp = PhotoImage(file=path_to_img_bnp)
-    Label(bnp_frame_description,
-          image=img_bnp, padx=10, pady=10
-          ).pack(side=LEFT, anchor=E, ipadx=5, ipady=5)
-
-    # Создаем область для того чтобы поместить туда подготовительные кнопки(выбрать файл,выбрать папку и т.п.)
-    frame_data_bnp = LabelFrame(tab_bnp, text='Подготовка')
-    frame_data_bnp.pack(padx=10, pady=10)
-
-    # Создаем кнопку Выбрать файл
-
-    btn_bnp_rmg = Button(frame_data_bnp, text='1) Выберите файл из Яндекс форм', font=('Arial Bold', 14),
-                         command=select_data_bnp)
-    btn_bnp_rmg.pack(padx=10, pady=10)
 
 
-    btn_bnp_choose_end_folder = Button(frame_data_bnp, text='2) Выберите конечную папку',
-                                       font=('Arial Bold', 14),
-                                       command=select_end_folder_bnp
-                                       )
-    btn_bnp_choose_end_folder.pack(padx=10, pady=10)
-
-    # Создаем кнопку слияния
-
-    btn_bnp_process = Button(tab_bnp, text='3) Выполнить обработку',
-                             font=('Arial Bold', 20),
-                             command=processing_create_result_bnp)
-    btn_bnp_process.pack(padx=10, pady=10)
-
+    # """
+    #    Создаем вкладку для результатов тестирования БНП
+    #    """
+    #
+    # tab_bnp = ttk.Frame(tab_control)
+    # tab_control.add(tab_bnp, text='Обработка результатов тестирования БНП')
+    #
+    # bnp_frame_description = LabelFrame(tab_bnp)
+    # bnp_frame_description.pack()
+    #
+    # lbl_hello_bnp = Label(bnp_frame_description,
+    #                       text='Центр опережающей профессиональной подготовки Республики Бурятия\n'
+    #                            'Для работы нужен файл из Яндекс формы'
+    #
+    #                            , width=60)
+    # lbl_hello_bnp.pack(side=LEFT, anchor=N, ipadx=25, ipady=10)
+    #
+    # # Картинка
+    # path_to_img_bnp = resource_path('logo.png')
+    # img_bnp = PhotoImage(file=path_to_img_bnp)
+    # Label(bnp_frame_description,
+    #       image=img_bnp, padx=10, pady=10
+    #       ).pack(side=LEFT, anchor=E, ipadx=5, ipady=5)
+    #
+    # # Создаем область для того чтобы поместить туда подготовительные кнопки(выбрать файл,выбрать папку и т.п.)
+    # frame_data_bnp = LabelFrame(tab_bnp, text='Подготовка')
+    # frame_data_bnp.pack(padx=10, pady=10)
+    #
+    # # Создаем кнопку Выбрать файл
+    #
+    # btn_bnp_rmg = Button(frame_data_bnp, text='1) Выберите файл из Яндекс форм', font=('Arial Bold', 14),
+    #                      command=select_data_bnp)
+    # btn_bnp_rmg.pack(padx=10, pady=10)
+    #
+    #
+    # btn_bnp_choose_end_folder = Button(frame_data_bnp, text='2) Выберите конечную папку',
+    #                                    font=('Arial Bold', 14),
+    #                                    command=select_end_folder_bnp
+    #                                    )
+    # btn_bnp_choose_end_folder.pack(padx=10, pady=10)
+    #
+    # # Создаем кнопку слияния
+    #
+    # btn_bnp_process = Button(tab_bnp, text='3) Выполнить обработку',
+    #                          font=('Arial Bold', 20),
+    #                          command=processing_create_result_bnp)
+    # btn_bnp_process.pack(padx=10, pady=10)
+    #
 
 
 
@@ -970,20 +999,49 @@ if __name__ == '__main__':
     # btn_svod_first_prof_process.pack(padx=10, pady=10)
     #
 
+    tab_age_teachers = ttk.Frame(tab_control)
+    tab_control.add(tab_age_teachers, text='Обработка возраста преподавателей')
 
+    age_teachers_frame_description = LabelFrame(tab_age_teachers)
+    age_teachers_frame_description.pack()
 
+    lbl_hello_age_teachers = Label(age_teachers_frame_description,
+                                   text='Центр опережающей профессиональной подготовки Республики Бурятия\n'
+                                        'Для работы нужен файл из Яндекс формы'
 
+                                   , width=60)
+    lbl_hello_age_teachers.pack(side=LEFT, anchor=N, ipadx=25, ipady=10)
 
+    # Картинка
+    path_to_img_age_teachers = resource_path('logo.png')
+    img_age_teachers = PhotoImage(file=path_to_img_age_teachers)
+    Label(age_teachers_frame_description,
+          image=img_age_teachers, padx=10, pady=10
+          ).pack(side=LEFT, anchor=E, ipadx=5, ipady=5)
 
+    # Создаем область для того чтобы поместить туда подготовительные кнопки(выбрать файл,выбрать папку и т.п.)
+    frame_data_age_teachers = LabelFrame(tab_age_teachers, text='Подготовка')
+    frame_data_age_teachers.pack(padx=10, pady=10)
 
+    # Создаем кнопку Выбрать файл
 
+    btn_age_teachers_rmg = Button(frame_data_age_teachers, text='1) Выберите файл из Яндекс таблиц',
+                                  font=('Arial Bold', 14),
+                                  command=select_age_teachers_data_xlsx)
+    btn_age_teachers_rmg.pack(padx=10, pady=10)
 
+    btn_age_teachers_choose_end_folder = Button(frame_data_age_teachers, text='2) Выберите конечную папку',
+                                                font=('Arial Bold', 14),
+                                                command=select_age_teachers_end_folder
+                                                )
+    btn_age_teachers_choose_end_folder.pack(padx=10, pady=10)
 
+    # Создаем кнопку слияния
 
-
-
-
-
+    btn_age_teachers_process = Button(tab_age_teachers, text='3) Выполнить обработку',
+                                      font=('Arial Bold', 20),
+                                      command=prepare_age_teachers)
+    btn_age_teachers_process.pack(padx=10, pady=10)
 
     # Создаем виджет для управления полосой прокрутки
     canvas.create_window((0, 0), window=tab_control, anchor="nw")
