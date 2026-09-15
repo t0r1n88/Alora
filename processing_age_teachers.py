@@ -64,7 +64,6 @@ def processing_age_teachers(data_file:str,end_folder:str):
         for sheet in lst_sheets:
             print(sheet)
             temp_df = pd.read_excel(data_file, sheet_name=sheet)
-            temp_df = temp_df.dropna(axis=1, how='all')
 
             try:
                 temp_df = temp_df[lst_cols]
