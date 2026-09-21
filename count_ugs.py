@@ -117,10 +117,12 @@ def processing_count_ugs(data_file:str,lst_spec:str,end_folder:str):
     current_date = time.strftime('%d_%m_%Y', t)
 
     spec_df = pd.read_excel(lst_spec,sheet_name='Выпадающие списки')
-    print(spec_df.head())
 
     req_wb = openpyxl.load_workbook(data_file)
     lst_sheets = req_wb.sheetnames
+
+    dict_df = dict()
+    dict_result_df = dict()
 
     for sheet in lst_sheets:
         print(sheet)
@@ -141,13 +143,43 @@ def processing_count_ugs(data_file:str,lst_spec:str,end_folder:str):
                                  values=['Количество выпускников','Процент трудоустройства'],
                                  aggfunc={'Количество выпускников':'sum','Процент трудоустройства':'mean'})
         svod_df['Процент трудоустройства'] =svod_df['Процент трудоустройства'].apply(lambda x:round(x,2))
-        svod_df.to_excel('data/svod.xlsx')
+        svod_df = svod_df.reset_index()
 
+        dict_df[f'{sheet}'] = svod_df
+        dict_result_df[f'{sheet}'] = result_df
+
+
+    # Объединяем
+    # Добавляем колонку "Год" и объединяем
+    combined = pd.concat(
+        [df.assign(Год=year) for year, df in dict_df.items()],
+        ignore_index=True
+    )
+
+    # Переставляем колонки в удобный порядок
+    combined = combined[['Год', 'УГС', 'Количество выпускников', 'Процент трудоустройства']]
+    wide = combined.pivot_table(
+        index='УГС',
+        columns='Год',
+        values=['Количество выпускников', 'Процент трудоустройства']
+    )
+
+    wide.to_excel('data/wid.xlsx')
+
+    combined = pd.concat(
+        [df.assign(Год=year) for year, df in dict_result_df.items()],
+        ignore_index=True
+    )
+
+    # Переставляем колонки в удобный порядок
+    combined = combined[['Год', 'УГС', 'Количество выпускников', 'Процент трудоустройства']]
+
+    combined.to_excel('data/comb.xlsx')
 
 
 
 if __name__ == '__main__':
-    main_data_file = 'data/Копия огпс _ труд 2022-2025.xlsx'
+    main_data_file = 'data/огпс _ труд 2022-2025 (1).xlsx'
     main_lst_spec = 'data/Техникум №2.xlsx'
     main_end_folder = 'data/Результат'
     processing_count_ugs(main_data_file,main_lst_spec,main_end_folder)
