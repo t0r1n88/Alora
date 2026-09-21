@@ -27,7 +27,7 @@ def find_match(value, search_list):
         if value_clean in item_clean:
             return item
 
-    return None
+    return value
 
 def extract_ugs(value):
     if pd.isna(value):
@@ -38,7 +38,7 @@ def extract_ugs(value):
     if value.startswith('08.'):
         return '08.00.00 Техника и технологии строительства'
     elif value.startswith('09.'):
-        return
+        return '09.00.00 Информатика и вычислительная техника'
     elif value.startswith('10.'):
         return '10.00.00 Информационная безопасность'
     elif value.startswith('11.'):
