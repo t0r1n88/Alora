@@ -4,6 +4,8 @@
 
 import pandas as pd
 import openpyxl
+from openpyxl.utils.dataframe import dataframe_to_rows
+from openpyxl.utils import get_column_letter
 import time
 import re
 import numpy as np
@@ -159,6 +161,60 @@ def parse_with_positions(raw_data):
 
 
 
+
+
+
+
+def write_df_to_excel(dct_df:dict,write_index:bool)->openpyxl.Workbook:
+    """
+    Функция для записи датафрейма в файл Excel
+    :param dct_df: словарь где ключе это название создаваемого листа а значение датафрейм который нужно записать
+    :param write_index: нужно ли записывать индекс датафрейма True or False
+    :return: объект Workbook с записанными датафреймами
+    """
+    wb = openpyxl.Workbook() # создаем файл
+    count_index = 0 # счетчик индексов создаваемых листов
+    for name_sheet,df in dct_df.items():
+        wb.create_sheet(title=name_sheet,index=count_index) # создаем лист
+        # записываем данные в лист
+        if len(df) == 0:
+            continue
+        for row in dataframe_to_rows(df,index=write_index,header=True):
+            wb[name_sheet].append(row)
+        # ширина по содержимому
+        # сохраняем по ширине колонок
+        for column in wb[name_sheet].columns:
+            max_length = 0
+            column_name = get_column_letter(column[0].column)
+            for cell in column:
+                try:
+                    if len(str(cell.value)) > max_length:
+                        max_length = len(cell.value)
+                except:
+                    pass
+            adjusted_width = (max_length + 2)
+            wb[name_sheet].column_dimensions[column_name].width = adjusted_width
+        count_index += 1
+    # удаляем лишний лист
+    if len(wb.sheetnames) >= 2 and 'Sheet' in wb.sheetnames:
+        del wb['Sheet']
+    return wb
+
+def del_sheet(wb: openpyxl.Workbook, lst_name_sheet: list) -> openpyxl.Workbook:
+    """
+    Функция для удаления лишних листов из файла
+    :param wb: объект таблицы
+    :param lst_name_sheet: список удаляемых листов
+    :return: объект таблицы без удаленных листов
+    """
+    for del_sheet in lst_name_sheet:
+        if del_sheet in wb.sheetnames:
+            del wb[del_sheet]
+
+    return wb
+
+
+
 def processing_poo_ugs(data_file:str, lst_spec:str, end_folder:str):
     error_df = pd.DataFrame(columns=['Лист', 'Ошибка'])
     t = time.localtime()
@@ -244,6 +300,8 @@ def processing_poo_ugs(data_file:str, lst_spec:str, end_folder:str):
             columns=['ПОО', 'Специальность', 'Количество выпускников', 'Средняя зарплата',
                      'Процент трудоустройства', 'УГС'])
 
+        temp_df['Средняя зарплата'] = temp_df['Средняя зарплата'].replace(0,'Нет данных')
+
 
         lst_poo = sorted(temp_df['ПОО'].unique())
         for poo in lst_poo:
@@ -251,9 +309,14 @@ def processing_poo_ugs(data_file:str, lst_spec:str, end_folder:str):
             dict_df[poo] = poo_df
 
 
-        with pd.ExcelWriter(f'{end_folder}/Данные {sheet}.xlsx') as writer:
-            for name_sheet, df in dict_df.items():
-                df.to_excel(writer,index=False,sheet_name=name_sheet)
+        # with pd.ExcelWriter(f'{end_folder}/Данные {sheet}.xlsx') as writer:
+        #     for name_sheet, df in dict_df.items():
+        #         df.to_excel(writer,index=False,sheet_name=name_sheet)
+
+        main_wb = write_df_to_excel(dict_df, write_index=False)
+        main_wb = del_sheet(main_wb, ['Sheet', 'Sheet1', 'Для подсчета'])
+        main_wb.save(f'{end_folder}/Данные {sheet}.xlsx')
+
 
 
 
