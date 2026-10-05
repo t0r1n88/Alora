@@ -109,14 +109,15 @@ def create_structure_folder_advanced(
 if __name__ == '__main__':
 
     main_name_folder_file = 'data/2026-03-10 Курс для педагогов-психологов Цифровизация профессиональной .xlsx'
-    main_name_column = 'Фио'
-    main_end_folder ='data/Результат'
+    main_name_folder_file = 'data/Список районов.xlsx'
+    main_name_column = 'Район'
+    main_end_folder ='data/Результат Структура файлов'
     main_data_file = 'data/Список класса.xlsx'
     main_source_folder = 'data/Данные для копирования'
     create_structure_folder_advanced(
         name_folder_file=main_name_folder_file,
         name_column=main_name_column,
-        end_folder='data/Результат',
+        end_folder=main_end_folder,
         source_folder=main_source_folder,
         file_pattern="*",  # копировать только Excel файлы
         recursive=True,
