@@ -260,6 +260,7 @@ def processing_poo_ugs(data_file:str, lst_spec:str, end_folder:str):
                    'Улан-Удэнский колледж железнодорожного транспорта (филиал Иркутского государственного университета путей сообщения)':'УУКЖТ',
                    'Улан-Удэнский техникум экономики, торговли и права Бурятского республиканского союза потребительских обществ':'УУТЭТиП',
                    'Колледж традиционных искусств и ремесел народов Забайкалья':'КТИРНЗ',
+                   'Институт дополнительного образования и профессионального обучения (г. Улан-Удэ)':'ИДОПО',
                    }
 
     for sheet in lst_sheets:
@@ -278,8 +279,6 @@ def processing_poo_ugs(data_file:str, lst_spec:str, end_folder:str):
 
         temp_df['ПОО'] = temp_df['ПОО'].apply(lambda x:str(x).replace('*',''))
         temp_df['ПОО'] = temp_df['ПОО'].replace(replace_dct)
-
-
 
 
 
@@ -323,7 +322,7 @@ def processing_poo_ugs(data_file:str, lst_spec:str, end_folder:str):
 
 
 if __name__ == '__main__':
-    main_data_file = 'data/статистика трудоустройства выпускников 24-25.xlsx'
+    main_data_file = 'data/статистика трудоустройства выпускников 22-25.xlsx'
     main_lst_spec = 'data/Техникум №2.xlsx'
     main_end_folder = 'data/Результат'
     processing_poo_ugs(main_data_file, main_lst_spec, main_end_folder)
