@@ -71,6 +71,8 @@ def extract_ugs(value):
         return '29.00.00 Технологии легкой промышленности'
     elif value.startswith('31.'):
         return '31.00.00 Клиническая медицина'
+    elif value.startswith('32.'):
+        return '32.00.00 Науки о здоровье и профилактическая медицина'
     elif value.startswith('33.'):
         return '33.00.00 Фармация'
     elif value.startswith('34.'):
@@ -97,6 +99,8 @@ def extract_ugs(value):
         return '46.00.00 Гуманитарные науки'
     elif value.startswith('49.'):
         return '49.00.00 Физическая культура и спорт'
+    elif value.startswith('50.'):
+        return '50.00.00 Искусствознание'
     elif value.startswith('51.'):
         return '51.00.00 Культуроведение и социокультурные проекты'
     elif value.startswith('52.'):

@@ -84,18 +84,40 @@ def extract_ugs(value):
 
     value = str(value).strip()
 
-    if value.startswith('08.'):
+    if value.startswith('01.'):
+        return '01.00.00 Математика и механика'
+    elif value.startswith('02.'):
+        return '02.00.00 Компьютерные и информационные науки'
+    elif value.startswith('03.'):
+        return '03.00.00 Физика и астрономия'
+    elif value.startswith('04.'):
+        return '04.00.00 Химия'
+    elif value.startswith('05.'):
+        return '05.00.00 Науки о Земле'
+    elif value.startswith('06.'):
+        return '06.00.00 Биологические науки'
+    elif value.startswith('07.'):
+        return '07.00.00 Архитектура'
+    elif value.startswith('08.'):
         return '08.00.00 Техника и технологии строительства'
     elif value.startswith('09.'):
         return '09.00.00 Информатика и вычислительная техника'
+    elif value.startswith('10.'):
+        return '10.00.00 Информационная безопасность'
     elif value.startswith('11.'):
         return '11.00.00 Электроника, радиотехника и системы связи'
     elif value.startswith('12.'):
         return '12.00.00 Фотоника, приборостроение, оптические и биотехнические системы и технологии'
     elif value.startswith('13.'):
         return '13.00.00 Электро- и теплоэнергетика'
+    elif value.startswith('14.'):
+        return '14.00.00 Ядерная энергетика и технологии'
     elif value.startswith('15.'):
         return '15.00.00 Машиностроение'
+    elif value.startswith('16.'):
+        return '16.00.00 Физико-технические науки и технологии'
+    elif value.startswith('17.'):
+        return '17.00.00 Оружие и системы вооружения'
     elif value.startswith('18.'):
         return '18.00.00 Химические технологии'
     elif value.startswith('19.'):
@@ -104,18 +126,26 @@ def extract_ugs(value):
         return '20.00.00 Техносферная безопасность и природообустройство'
     elif value.startswith('21.'):
         return '21.00.00 Прикладная геология, горное дело, нефтегазовое дело и геодезия'
+    elif value.startswith('22.'):
+        return '22.00.00 Технологии материалов'
     elif value.startswith('23.'):
         return '23.00.00 Техника и технологии наземного транспорта'
     elif value.startswith('24.'):
         return '24.00.00 Авиационная и ракетно-космическая техника'
     elif value.startswith('25.'):
         return '25.00.00 Аэронавигация и эксплуатация авиационной и ракетно-космической техники'
+    elif value.startswith('26.'):
+        return '26.00.00 Техника и технологии кораблестроения и водного транспорта'
     elif value.startswith('27.'):
         return '27.00.00 Управление в технических системах'
+    elif value.startswith('28.'):
+        return '28.00.00 Нанотехнологии и наноматериалы'
     elif value.startswith('29.'):
         return '29.00.00 Технологии легкой промышленности'
     elif value.startswith('31.'):
         return '31.00.00 Клиническая медицина'
+    elif value.startswith('32.'):
+        return '32.00.00 Науки о здоровье и профилактическая медицина'
     elif value.startswith('33.'):
         return '33.00.00 Фармация'
     elif value.startswith('34.'):
@@ -130,6 +160,10 @@ def extract_ugs(value):
         return '39.00.00 Социология и социальная работа'
     elif value.startswith('40.'):
         return '40.00.00 Юриспруденция'
+    elif value.startswith('41.'):
+        return '41.00.00 Политические науки и регионоведение'
+    elif value.startswith('42.'):
+        return '42.00.00 Средства массовой информации и информационно-библиотечное дело'
     elif value.startswith('43.'):
         return '43.00.00 Сервис и туризм'
     elif value.startswith('44.'):
@@ -138,6 +172,8 @@ def extract_ugs(value):
         return '46.00.00 Гуманитарные науки'
     elif value.startswith('49.'):
         return '49.00.00 Физическая культура и спорт'
+    elif value.startswith('50.'):
+        return '50.00.00 Искусствознание'
     elif value.startswith('51.'):
         return '51.00.00 Культуроведение и социокультурные проекты'
     elif value.startswith('52.'):
@@ -148,7 +184,11 @@ def extract_ugs(value):
         return '54.00.00 Изобразительное и прикладные виды искусств'
     elif value.startswith('55.'):
         return '55.00.00 Экранные искусства'
-    elif re.search(r'^\d{5,6}',value,re.IGNORECASE):
+    elif value.startswith('56.'):
+        return '56.00.00 Военное управление'
+    elif value.startswith('57.'):
+        return '57.00.00 Обеспечение государственной безопасности'
+    elif re.search(r'^\d{5,6}', value, re.IGNORECASE):
         return 'группа ОВЗ'
     elif value == 'Мастер маникюра':
         return 'группа ОВЗ'
