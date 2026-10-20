@@ -144,7 +144,7 @@ def filter_group(g: pd.DataFrame) -> pd.DataFrame:
     return g.head(1)
 
 def split_sum(g: pd.DataFrame) -> pd.DataFrame:
-    SUM_COL = 'Значение из колонки Сумма строки листа Замещ_2030'
+    SUM_COL = 'Значение из колонки Сумма строки листа Замещ'
     GRP_COL = 'Код начальной группы занятий'
 
     g = g.copy()
@@ -162,7 +162,6 @@ def create_svod_kcp(data_file: str,spec_data_file:str ,end_folder: str):
 
     t = time.localtime()
     current_time = time.strftime('%H_%M_%S', t)
-    current_date = time.strftime('%d_%m_%Y', t)
     df = pd.read_excel(data_file, dtype=str, sheet_name='Объединённая таблица')
 
     spec_df = pd.read_excel(spec_data_file,sheet_name='Общий список') # специальности
@@ -172,13 +171,11 @@ def create_svod_kcp(data_file: str,spec_data_file:str ,end_folder: str):
     mask = df['Первые цифры'].str.startswith(('3', '4', '5', '6', '7', '8'), na=False)
     df = df[mask]
     df['УГС'] = df['Код профессии/специальности'].apply(extract_ugs)
-    # df['Сумма строки'] = df['Сумма строки'].astype(str).str.replace('.', ',', regex=False)
     df['Сумма строки'] = df['Сумма строки'].astype(float)
-    # df['Значение из колонки Сумма строки листа Замещ_2030'] = df['Значение из колонки Сумма строки листа Замещ_2030'].astype(int)
-    # df['Сумма строки'] = df['Сумма строки'].astype(int)
+
     df['Сумма строки'] = df['Сумма строки'].apply(lambda x:round(x,0))
-    df.rename(columns={'Сумма строки':'Значение из колонки Сумма строки листа Замещ_2030'},inplace=True)
-    df = df.drop(columns=df.columns[3:24])
+    df.rename(columns={'Сумма строки':'Значение из колонки Сумма строки листа Замещ'},inplace=True)
+    df = df.drop(columns=df.columns[3:56])
 
     # добавляем специальности
     result = pd.merge(df, spec_df, left_on='Код профессии/специальности', right_on='Код', how='outer',indicator=True)
@@ -191,7 +188,7 @@ def create_svod_kcp(data_file: str,spec_data_file:str ,end_folder: str):
 
     base_df = result.copy() # делаем копию
 
-    SUM_COL = 'Значение из колонки Сумма строки листа Замещ_2030'
+    SUM_COL = 'Значение из колонки Сумма строки листа Замещ'
     GRP_COL = 'Код начальной группы занятий'
     REP_COL = 'Наличие в Республике'
     LINK_COL = 'Тип связи'
@@ -207,32 +204,77 @@ def create_svod_kcp(data_file: str,spec_data_file:str ,end_folder: str):
 
 
     base_svod_df = pd.pivot_table(base_df,index=['УГС'],
-                                 values=['Значение из колонки Сумма строки листа Замещ_2030'],
+                                 values=['Значение из колонки Сумма строки листа Замещ'],
                                  aggfunc='sum',
-                                  margins=True,margins_name='Итого')
+                                  margins=True,margins_name='Итого').rename(columns={'Значение из колонки Сумма строки листа Замещ':'Количество'})
 
 
     reg_svod_df = pd.pivot_table(reg_df,index=['УГС'],
-                                 values=['Значение из колонки Сумма строки листа Замещ_2030'],
+                                 values=['Значение из колонки Сумма строки листа Замещ'],
                                  aggfunc='sum',
-                                 margins=True,margins_name='Итого')
+                                 margins=True,margins_name='Итого').rename(columns={'Значение из колонки Сумма строки листа Замещ':'Количество'})
 
     not_reg_svod_df = pd.pivot_table(not_reg_df,index=['УГС'],
-                                 values=['Значение из колонки Сумма строки листа Замещ_2030'],
+                                 values=['Значение из колонки Сумма строки листа Замещ'],
                                  aggfunc='sum',
-                                     margins=True,margins_name='Итого')
+                                     margins=True,margins_name='Итого').rename(columns={'Значение из колонки Сумма строки листа Замещ':'Количество'})
+
+    reg_zan_svod_df = pd.pivot_table(reg_df,index=['Наименование начальной группы занятий'],
+                                 values=['Значение из колонки Сумма строки листа Замещ'],
+                                 aggfunc='sum',
+                                ).sort_values(by=['Значение из колонки Сумма строки листа Замещ'],ascending=False)
+
+    total_row = reg_zan_svod_df.sum(axis=0, numeric_only=True)
+    total_row.name = 'Итого'  # Называем строку
+    reg_zan_svod_df = pd.concat([reg_zan_svod_df, total_row.to_frame().T])
+    reg_zan_svod_df = reg_zan_svod_df.reset_index()
+    reg_zan_svod_df.columns = ['Наименование начальной группы занятий','Количество']
+
+
+    code_df = pd.DataFrame(columns=['Код'])
+    code_df['Код начальной группы занятий'] = df['Код начальной группы занятий'].unique()
+    code_df['Наименование начальной группы занятий'] = df['Наименование начальной группы занятий'].unique()
+
+
+    reg_zan_svod_df = pd.merge(reg_zan_svod_df, code_df, left_on='Наименование начальной группы занятий', right_on='Наименование начальной группы занятий', how='inner',indicator=False)
+    reg_zan_svod_df = reg_zan_svod_df.reindex(columns=['Наименование начальной группы занятий','Код начальной группы занятий','Количество'])
+
+
+
+
+    not_reg_zan_svod_df = pd.pivot_table(not_reg_df,index=['Наименование начальной группы занятий'],
+                                 values=['Значение из колонки Сумма строки листа Замещ'],
+                                 aggfunc='sum',
+                                ).sort_values(by=['Значение из колонки Сумма строки листа Замещ'],ascending=False)
+
+    total_row = not_reg_zan_svod_df.sum(axis=0, numeric_only=True)
+    total_row.name = 'Итого'  # Называем строку
+    not_reg_zan_svod_df = pd.concat([not_reg_zan_svod_df, total_row.to_frame().T])
+    not_reg_zan_svod_df = not_reg_zan_svod_df.reset_index()
+    not_reg_zan_svod_df.columns = ['Наименование начальной группы занятий','Количество']
+    not_reg_zan_svod_df = pd.merge(not_reg_zan_svod_df, code_df, left_on='Наименование начальной группы занятий', right_on='Наименование начальной группы занятий', how='inner',indicator=False)
+    not_reg_zan_svod_df = not_reg_zan_svod_df.reindex(columns=['Наименование начальной группы занятий','Код начальной группы занятий','Количество'])
+
+
+
+
+
+
+
 
     with pd.ExcelWriter(f'{end_folder}/Итоговый свод {current_time}.xlsx') as writer:
         base_svod_df.to_excel(writer,sheet_name='Свод по всем',index=True)
         reg_svod_df.to_excel(writer,sheet_name='Свод по местным проф',index=True)
         not_reg_svod_df.to_excel(writer,sheet_name='Свод по отсутствующим проф',index=True)
+        reg_zan_svod_df.to_excel(writer,sheet_name='Группы занятий местные',index=False)
+        not_reg_zan_svod_df.to_excel(writer,sheet_name='Группы занятий неместные',index=False)
         base_df.to_excel(writer,sheet_name='список для свода',index=False)
         result.to_excel(writer,sheet_name='Сырые данные',index=False)
 
 
 
 if __name__ == '__main__':
-    main_data_file = 'data/Соединение ОКЗ из листа Замещ_2030 и ОКЗ из Переходника Минруда.xlsx'
+    main_data_file = 'data/2027 замещение.xlsx'
     main_spec_data_file = 'data/Итоговый файл 28_09_2026.xlsx'
     main_end_folder = 'data/Результат'
 
