@@ -274,7 +274,7 @@ def create_svod_kcp(data_file: str,spec_data_file:str ,end_folder: str):
 
 
 if __name__ == '__main__':
-    main_data_file = 'data/2027 замещение.xlsx'
+    main_data_file = 'data/2032 замещение.xlsx'
     main_spec_data_file = 'data/Итоговый файл 28_09_2026.xlsx'
     main_end_folder = 'data/Результат'
 
