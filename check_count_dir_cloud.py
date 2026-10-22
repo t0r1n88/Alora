@@ -106,8 +106,17 @@ def build_folder_structure(root_folder, end_folder, min_size_kb=5):
 
     # DataFrame 3: сводка (со всеми папками 1 уровня, включая нули)
     df_big.columns = ['Муниципалитет','Организация ФИО','Размер в кб']
+    df_big['ФИО'] = df_big['Организация ФИО'].str.extract(
+        r'([А-ЯЁ][а-яё\-]+\s+[А-ЯЁ][а-яё\-]+\s+[А-ЯЁ][а-яё\-]+)\s*$',
+        expand=False
+    )
     df_summary = pd.DataFrame(summary_records)
     df_summary.columns = ['Муниципалитет','Количество загрузивших задание']
+    total_row = df_summary.sum(axis=0, numeric_only=True)
+    total_row.name = 'Итого'  # Называем строку
+    df_summary = pd.concat([df_summary, total_row.to_frame().T])
+    df_summary.loc['Итого', 'Муниципалитет'] = 'Итого'
+
 
 
 
