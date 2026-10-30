@@ -38,6 +38,7 @@ def generate_data_yandex_file(data_file:str,end_folder:str):
             continue
 
         temp_df = temp_df[lst_cols]
+        temp_df = temp_df.dropna(subset=['Муниципалитет'])
         temp_df = temp_df[~temp_df['Муниципалитет'].str.contains('Итого|Всего', case=False, na=False)]
         temp_df['Муниципалитет'] = temp_df['Муниципалитет'].apply(lambda x:x.strip() if isinstance(x,str) else x)
         temp_df.insert(0,'ПОО',sheet)
